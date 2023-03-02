@@ -1,0 +1,57 @@
+{
+    "clientMode": {
+        "adjustments": [
+            {
+                "clock": "system",
+                "type": "adjtimex"
+            }
+        ],
+        "enabled": true,
+        "selection": {
+            "pick": 2,
+            "type": "stdDev"
+        },
+        "servers": [
+            {
+                "calculation": {
+                    "size": 8,
+                    "type": "arithmeticMean"
+                },
+                "dstAddress": "172.16.100.138",
+                "interval": 0,
+                "srcInterface": "ens33"
+            },
+            {
+                "calculation": {
+                    "size": 8,
+                    "type": "arithmeticMean"
+                },
+                "dstAddress": "172.16.100.139",
+                "interval": 0,
+                "srcInterface": "ens33"
+            },
+            {
+                "calculation": {
+                    "size": 8,
+                    "type": "arithmeticMean"
+                },
+                "dstAddress": "172.16.100.140",
+                "interval": 0,
+                "srcInterface": "ens33"
+            }
+        ]
+    },
+    "logging": {
+        "standardStreams": {
+            "enabled": true,
+            "severity": "debug"
+        },
+        "syslog": {
+            "enabled": false,
+            "severity": "info"
+        }
+    },
+    "serverMode": {
+        "enabled": false
+    }
+}

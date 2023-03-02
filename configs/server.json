@@ -1,0 +1,25 @@
+{
+    "clientMode": {
+        "enabled": false
+    },
+    "logging": {
+        "standardStreams": {
+            "enabled": true,
+            "severity": "debug"
+        }
+    },
+    "serverMode": {
+        "clockAccuracy": "0x2f",
+        "clockClass": 248,
+        "clockVariance": 65535,
+        "enabled": true,
+        "listeners": [
+            {
+                "interface": "enp3s0"
+            }
+        ],
+        "priority1": 128,
+        "priority2": 128,
+        "utcOffset": 37
+    }
+}

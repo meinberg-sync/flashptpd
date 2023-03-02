@@ -1,0 +1,17 @@
+R"(
+{ 
+   "standardStreams": {
+        "enabled": true,
+        "severity": "debug"
+    },
+    "file": {
+        "enabled": false,
+        "severity": "debug",
+        "filename": "logfile.txt"
+    },
+    "syslog": {
+        "enabled": true,
+        "severity": "info"
+    }
+}
+)"

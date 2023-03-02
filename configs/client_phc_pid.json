@@ -1,0 +1,113 @@
+{
+    "clientMode": {
+        "adjustments": [
+            {
+                "clock": "/dev/ptp0",
+                "iRatio": 0.025,
+                "pRatio": 0.2,
+                "stepThreshold": 10000000,
+                "type": "pidController"
+            }
+        ],
+        "enabled": true,
+        "selection": {
+            "pick": 3,
+            "type": "stdDev"
+        },
+        "servers": [
+            {
+                "calculation": {
+                    "size": 4,
+                    "type": "arithmeticMean"
+                },
+                "dstAddress": "172.16.100.138",
+                "filters": [
+                    {
+                        "size": 16,
+                        "type": "luckyPacket"
+                    }
+                ],
+                "interval": -4,
+                "srcInterface": "enp1s0"
+            },
+            {
+                "calculation": {
+                    "size": 6,
+                    "type": "arithmeticMean"
+                },
+                "dstAddress": "bad:babe::1000:138",
+                "filters": [
+                    {
+                        "size": 32,
+                        "type": "luckyPacket"
+                    }
+                ],
+                "interval": -5,
+                "srcInterface": "enp1s0"
+            },
+            {
+                "calculation": {
+                    "size": 8,
+                    "type": "arithmeticMean"
+                },
+                "dstAddress": "172.16.100.139",
+                "filters": [
+                    {
+                        "pick": 8,
+                        "size": 128,
+                        "type": "luckyPacket"
+                    },
+                    {
+                        "size": 8,
+                        "type": "medianOffset"
+                    }
+                ],
+                "interval": -7,
+                "srcInterface": "enp1s0"
+            },
+            {
+                "calculation": {
+                    "size": 4,
+                    "type": "arithmeticMean"
+                },
+                "dstAddress": "bad:babe::1000:140",
+                "filters": [
+                    {
+                        "size": 16,
+                        "type": "luckyPacket"
+                    }
+                ],
+                "interval": -4,
+                "srcInterface": "enp1s0"
+            },
+            {
+                "calculation": {
+                    "size": 8,
+                    "type": "arithmeticMean"
+                },
+                "dstAddress": "ec:46:70:12:22:23",
+                "filters": [
+                    {
+                        "size": 32,
+                        "type": "luckyPacket"
+                    }
+                ],
+                "interval": -5,
+                "srcInterface": "enp1s0"
+            }
+        ]
+    },
+    "logging": {
+        "standardStreams": {
+            "enabled": true,
+            "severity": "info"
+        },
+        "syslog": {
+            "enabled": false,
+            "severity": "info"
+        }
+    },
+    "serverMode": {
+        "enabled": false
+    }
+}

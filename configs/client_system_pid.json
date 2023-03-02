@@ -1,0 +1,53 @@
+{
+    "clientMode": {
+        "adjustments": [
+            {
+                "clock": "system",
+                "iRatio": 0.05,
+                "pRatio": 0.2,
+                "stepThreshold": 100000000,
+                "type": "pidController"
+            }
+        ],
+        "enabled": true,
+        "selection": {
+            "type": "bmca"
+        },
+        "servers": [
+            {
+                "bmcaComparisonDSSpan": 64,
+                "calculation": {
+                    "size": 8,
+                    "type": "arithmeticMean"
+                },
+                "dstAddress": "172.16.100.138",
+                "filters": [
+                    {
+                        "pick": 7,
+                        "size": 64,
+                        "type": "luckyPacket"
+                    },
+                    {
+                        "size": 7,
+                        "type": "medianOffset"
+                    }
+                ],
+                "interval": -6,
+                "srcInterface": "ens33"
+            }
+        ]
+    },
+    "logging": {
+        "standardStreams": {
+            "enabled": true,
+            "severity": "debug"
+        },
+        "syslog": {
+            "enabled": true,
+            "severity": "info"
+        }
+    },
+    "serverMode": {
+        "enabled": false
+    }
+}
