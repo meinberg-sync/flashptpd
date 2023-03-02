@@ -1,6 +1,7 @@
 /*
  * @file bmca.h
- * @note Copyright (C) 2023 Thomas Behn <thomas.behn@meinberg.de>
+ * @note Copyright 2023, Meinberg Funkuhren GmbH & Co. KG, All rights reserved.
+ * @author Thomas Behn <thomas.behn@meinberg.de>
  *
  * This class implements the IEEE1588 best master clock algorithm as server selection
  * algorithm (@see Selection.h). Servers that shall be taken into consideration

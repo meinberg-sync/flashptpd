@@ -1,6 +1,7 @@
 /*
  * @file phc.h
- * @note Copyright (C) 2023 Thomas Behn <thomas.behn@meinberg.de>
+ * @note Copyright 2023, Meinberg Funkuhren GmbH & Co. KG, All rights reserved.
+ * @author Thomas Behn <thomas.behn@meinberg.de>
  *
  * The class PHC provides name (i.e., /dev/ptp0) and id of a physical hardware
  * clock (PHC) belonging to a physical network interface.

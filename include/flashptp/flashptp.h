@@ -1,6 +1,7 @@
 /*
  * @file flashptp.h
- * @note Copyright (C) 2023 Thomas Behn <thomas.behn@meinberg.de>
+ * @note Copyright 2023, Meinberg Funkuhren GmbH & Co. KG, All rights reserved.
+ * @author Thomas Behn <thomas.behn@meinberg.de>
  *
  * The class FlashPTP provides an interface to the flashPTP library. It takes
  * a JSON-formatted configuration and runs flashPTP client and/or server mode.

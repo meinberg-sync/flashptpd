@@ -1,5 +1,5 @@
 # **flashptpd**
-**flashptpd** is the C++17 reference implementation for a new approach to **IEEE1588** *(Precision Time Protocol, PTP)*. Designed to improve efficiency while reducing complexity, this new approach (which does not have name, yet) modifies unicast PTP to enable it to adopt a client/server model, while maintaining—or even improving on—the achievable synchronization accuracy by combining the hardware timestamping capabilities of PTP with certain aspects of the clock filtering, selection, and combining algorithms provided by NTP.
+**flashptpd** is the C++17 reference implementation for a new approach to **IEEE1588** *(Precision Time Protocol, PTP)*. Designed to improve efficiency while reducing complexity, this new approach (which does not have a name, yet) modifies unicast PTP to enable it to adopt a client/server model, while maintaining—or even improving on—the achievable synchronization accuracy by combining the hardware timestamping capabilities of PTP with certain aspects of the clock filtering, selection, and combining algorithms provided by NTP.
 
 ## How it works
 ![Communication Flow Diagram](Communication_Flow.png)
@@ -101,7 +101,9 @@ The above list of included algorithm implementations could easily be extended by
 flashptpd is licensed under the MIT License:
 <br>
 
-Copyright (C) 2023 Thomas Behn <Thomas.Behn@meinberg.de>
+Copyright 2023, Meinberg Funkuhren GmbH & Co. KG, All rights reserved.
+<br>
+Author: Thomas Behn <thomas.behn@meinberg.de>
 <br>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:

@@ -1,6 +1,7 @@
 /*
  * @file adjtimex.h
- * @note Copyright (C) 2023 Thomas Behn <thomas.behn@meinberg.de>
+ * @note Copyright 2023, Meinberg Funkuhren GmbH & Co. KG, All rights reserved.
+ * @author Thomas Behn <thomas.behn@meinberg.de>
  *
  * This class implements an adjustment algorithm (@see Adjustment.h) for the
  * system clock (CLOCK_REALTIME) using the standard Linux API function adjtimex.

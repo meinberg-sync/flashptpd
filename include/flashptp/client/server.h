@@ -1,6 +1,7 @@
 /*
  * @file server.h
- * @note Copyright (C) 2023 Thomas Behn <thomas.behn@meinberg.de>
+ * @note Copyright 2023, Meinberg Funkuhren GmbH & Co. KG, All rights reserved.
+ * @author Thomas Behn <thomas.behn@meinberg.de>
  *
  * The class Server represents the connection to another instance of flashPTP
  * running in server mode as part of the client mode for local clock synchronization.

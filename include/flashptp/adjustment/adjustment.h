@@ -1,6 +1,7 @@
 /*
  * @file adjustment.h
- * @note Copyright (C) 2023 Thomas Behn <thomas.behn@meinberg.de>
+ * @note Copyright 2023, Meinberg Funkuhren GmbH & Co. KG, All rights reserved.
+ * @author Thomas Behn <thomas.behn@meinberg.de>
  *
  * The abstract class Adjustment provides a pattern for adjustment algorithm
  * implementations within flashPTP. If you want to add a new algorithm,

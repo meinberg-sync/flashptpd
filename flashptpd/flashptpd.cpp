@@ -1,6 +1,7 @@
 /*
  * @file flashptpd.cpp
- * @note Copyright (C) 2023 Thomas Behn <thomas.behn@meinberg.de>
+ * @note Copyright 2023, Meinberg Funkuhren GmbH & Co. KG, All rights reserved.
+ * @author Thomas Behn <thomas.behn@meinberg.de>
  *
  * flashptpd is a command line utility which uses the flashPTP library to run
  * client and/or server mode of flashPTP on Linux computers and (if running in

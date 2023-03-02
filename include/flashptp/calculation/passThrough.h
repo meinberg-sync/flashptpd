@@ -1,6 +1,7 @@
 /*
  * @file passThrough.h
- * @note Copyright (C) 2023 Thomas Behn <thomas.behn@meinberg.de>
+ * @note Copyright 2023, Meinberg Funkuhren GmbH & Co. KG, All rights reserved.
+ * @author Thomas Behn <thomas.behn@meinberg.de>
  *
  * This class implements a very simple pass-through of completed Sync Request/
  * Sync Response sequences (@see Calculation.h). As soon as a sequence has been

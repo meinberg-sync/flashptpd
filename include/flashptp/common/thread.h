@@ -1,6 +1,7 @@
 /*
  * @file thread.h
- * @note Copyright (C) 2023 Thomas Behn <thomas.behn@meinberg.de>
+ * @note Copyright 2023, Meinberg Funkuhren GmbH & Co. KG, All rights reserved.
+ * @author Thomas Behn <thomas.behn@meinberg.de>
  *
  * The abstract class Thread provides a pattern for all classes within flashPTP,
  * that need to run any kind of worker thread. All that needs to be done is to

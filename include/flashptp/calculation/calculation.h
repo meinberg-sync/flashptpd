@@ -1,6 +1,7 @@
 /*
  * @file calculation.h
- * @note Copyright (C) 2023 Thomas Behn <thomas.behn@meinberg.de>
+ * @note Copyright 2023, Meinberg Funkuhren GmbH & Co. KG, All rights reserved.
+ * @author Thomas Behn <thomas.behn@meinberg.de>
  *
  * The abstract class Calculation provides a pattern for calculation algorithm
  * implementations (delay, offset, drift) within flashPTP. If you want to add

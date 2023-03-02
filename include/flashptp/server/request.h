@@ -1,6 +1,7 @@
 /*
  * @file request.h
- * @note Copyright (C) 2023 Thomas Behn <thomas.behn@meinberg.de>
+ * @note Copyright 2023, Meinberg Funkuhren GmbH & Co. KG, All rights reserved.
+ * @author Thomas Behn <thomas.behn@meinberg.de>
  *
  * The class Request helps to store received parts of Sync Request sequences
  * within flashPTP server mode in order to generate and transmit appropriate

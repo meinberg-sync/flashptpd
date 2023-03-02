@@ -1,6 +1,7 @@
 /*
  * @file arithmeticMean.h
- * @note Copyright (C) 2023 Thomas Behn <thomas.behn@meinberg.de>
+ * @note Copyright 2023, Meinberg Funkuhren GmbH & Co. KG, All rights reserved.
+ * @author Thomas Behn <thomas.behn@meinberg.de>
  *
  * This class implements an arithmetic mean calculation algorithm (@see Calculation.h).
  * As soon as the configured amount (size) of Sync Request/Sync Response sequences

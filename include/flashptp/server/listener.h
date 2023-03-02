@@ -1,6 +1,7 @@
 /*
  * @file listener.h
- * @note Copyright (C) 2023 Thomas Behn <thomas.behn@meinberg.de>
+ * @note Copyright 2023, Meinberg Funkuhren GmbH & Co. KG, All rights reserved.
+ * @author Thomas Behn <thomas.behn@meinberg.de>
  *
  * The class Listener provides a worker thread, which listens (@see network::recv)
  * for incoming flashPTP Sync Requests on one of the local physical network interfaces.

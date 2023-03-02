@@ -1,6 +1,7 @@
 #
-#  Copyright (C) 2023 Thomas Behn <thomas.behn@meinberg.de>
-#
+ * Copyright 2023, Meinberg Funkuhren GmbH & Co. KG, All rights reserved.
+ * Author: Thomas Behn <thomas.behn@meinberg.de>
+ *
 #  =============================================================================
 #
 #  Permission is hereby granted, free of charge, to any person obtaining

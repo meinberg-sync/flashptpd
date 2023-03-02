@@ -1,6 +1,7 @@
 /*
  * @file inventory.h
- * @note Copyright (C) 2023 Thomas Behn <thomas.behn@meinberg.de>
+ * @note Copyright 2023, Meinberg Funkuhren GmbH & Co. KG, All rights reserved.
+ * @author Thomas Behn <thomas.behn@meinberg.de>
  *
  * The class Inventory represents the complete network inventory of a system
  * running flashPTP including physical network interfaces and assigned addresses.

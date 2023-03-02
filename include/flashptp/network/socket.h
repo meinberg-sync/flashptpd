@@ -1,6 +1,7 @@
 /*
  * @file socket.h
- * @note Copyright (C) 2023 Thomas Behn <thomas.behn@meinberg.de>
+ * @note Copyright 2023, Meinberg Funkuhren GmbH & Co. KG, All rights reserved.
+ * @author Thomas Behn <thomas.behn@meinberg.de>
  *
  * The class Socket can be used to open and use a POSIX socket on a specific
  * physical network interface and for a specific address family (LL2/IPv4/IPv6),

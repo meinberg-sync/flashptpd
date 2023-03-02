@@ -1,6 +1,7 @@
 /*
  * @file pidController.h
- * @note Copyright (C) 2023 Thomas Behn <thomas.behn@meinberg.de>
+ * @note Copyright 2023, Meinberg Funkuhren GmbH & Co. KG, All rights reserved.
+ * @author Thomas Behn <thomas.behn@meinberg.de>
  *
  * This class implements a PID controller adjustment algorithm (@see Adjustment.h).
  * Unlike many other PID controller implementations, this one applies an integral

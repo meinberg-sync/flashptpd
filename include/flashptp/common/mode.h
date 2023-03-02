@@ -1,6 +1,7 @@
 /*
  * @file mode.h
- * @note Copyright (C) 2023 Thomas Behn <thomas.behn@meinberg.de>
+ * @note Copyright 2023, Meinberg Funkuhren GmbH & Co. KG, All rights reserved.
+ * @author Thomas Behn <thomas.behn@meinberg.de>
  *
  * The abstract class Mode provides a pattern for the classes client::ClientMode
  * and server::ServerMode. A Mode object pointer needs to be passed to the function

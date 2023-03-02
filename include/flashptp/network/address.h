@@ -1,6 +1,7 @@
 /*
  * @file address.h
- * @note Copyright (C) 2023 Thomas Behn <thomas.behn@meinberg.de>
+ * @note Copyright 2023, Meinberg Funkuhren GmbH & Co. KG, All rights reserved.
+ * @author Thomas Behn <thomas.behn@meinberg.de>
  *
  * The class Address represents any MAC, IPv4 or IPv6 address within flashPTP.
  * Addresses can be converted to and from string and to and from struct sockaddr.

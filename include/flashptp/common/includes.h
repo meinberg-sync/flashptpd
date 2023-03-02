@@ -1,6 +1,7 @@
 /*
  * @file includes.h
- * @note Copyright (C) 2023 Thomas Behn <thomas.behn@meinberg.de>
+ * @note Copyright 2023, Meinberg Funkuhren GmbH & Co. KG, All rights reserved.
+ * @author Thomas Behn <thomas.behn@meinberg.de>
  *
  * This file includes all third-party header files used within flashPTP.
  * You should not find (third-party) includes anywhere else.

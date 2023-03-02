@@ -1,6 +1,7 @@
 /*
  * @file stdDev.h
- * @note Copyright (C) 2023 Thomas Behn <thomas.behn@meinberg.de>
+ * @note Copyright 2023, Meinberg Funkuhren GmbH & Co. KG, All rights reserved.
+ * @author Thomas Behn <thomas.behn@meinberg.de>
  *
  * This class implements a standard deviation selection algorithm (@see Selection.h).
  * The algorithm selects the configured amount of servers (pick) with the best

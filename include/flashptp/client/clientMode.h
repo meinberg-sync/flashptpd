@@ -1,6 +1,7 @@
 /*
  * @file clientMode.h
- * @note Copyright (C) 2023 Thomas Behn <thomas.behn@meinberg.de>
+ * @note Copyright 2023, Meinberg Funkuhren GmbH & Co. KG, All rights reserved.
+ * @author Thomas Behn <thomas.behn@meinberg.de>
  *
  * The class ClientMode implements the abstract class Mode and represents the
  * client mode within flashPTP. Its worker thread starts all configured servers

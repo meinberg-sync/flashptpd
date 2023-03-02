@@ -1,6 +1,7 @@
 /*
  * @file serverMode.h
- * @note Copyright (C) 2023 Thomas Behn <thomas.behn@meinberg.de>
+ * @note Copyright 2023, Meinberg Funkuhren GmbH & Co. KG, All rights reserved.
+ * @author Thomas Behn <thomas.behn@meinberg.de>
  *
  * The class ServerMode implements the abstract class Mode and represents the
  * server mode within flashPTP. Its worker thread starts all configured listeners

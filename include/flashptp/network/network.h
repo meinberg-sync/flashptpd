@@ -1,6 +1,7 @@
 /*
  * @file network.h
- * @note Copyright (C) 2023 Thomas Behn <thomas.behn@meinberg.de>
+ * @note Copyright 2023, Meinberg Funkuhren GmbH & Co. KG, All rights reserved.
+ * @author Thomas Behn <thomas.behn@meinberg.de>
  *
  * This header provides all public network API functions to be used within
  * flashPTP. The init function instantiates a static object of class

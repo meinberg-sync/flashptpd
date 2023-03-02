@@ -1,6 +1,7 @@
 /*
  * @file sequence.h
- * @note Copyright (C) 2023 Thomas Behn <thomas.behn@meinberg.de>
+ * @note Copyright 2023, Meinberg Funkuhren GmbH & Co. KG, All rights reserved.
+ * @author Thomas Behn <thomas.behn@meinberg.de>
  *
  * The class Sequence helps to store Sync Request/Sync Response information like
  * sequence ID, timestamps, timestamp level, etc. for a server connection

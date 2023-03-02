@@ -1,6 +1,7 @@
 /*
  * @file cppLog.h
- * @note Copyright (C) 2023 Thomas Behn <thomas.behn@meinberg.de>
+ * @note Copyright 2023, Meinberg Funkuhren GmbH & Co. KG, All rights reserved.
+ * @author Thomas Behn <thomas.behn@meinberg.de>
  *
  * cppLog is a single source/header file library that provides easy-to-use API
  * functions for stdout, file and syslog logging. It takes a Json-formatted
