@@ -53,6 +53,7 @@
 #define FLASH_PTP_JSON_CFG_SERVER_MODE_CLOCK_ACCURACY               "clockAccuracy"
 #define FLASH_PTP_JSON_CFG_SERVER_MODE_CLOCK_VARIANCE               "clockVariance"
 #define FLASH_PTP_JSON_CFG_SERVER_MODE_PRIORITY_2                   "priority2"
+#define FLASH_PTP_JSON_CFG_SERVER_MODE_TIME_SOURCE                  "timeSource"
 
 #define FLASH_PTP_JSON_CFG_SERVER_MODE_LISTENERS                    "listeners"
 
@@ -108,14 +109,15 @@ private:
     void processRequest(Request *req);
     void checkRequestTimeouts();
 
-    BMCAComparisonDataSet _bmcaComparisonDS {
+    FlashPTPServerStateDS _serverStateDS {
         FLASH_PTP_DEFAULT_PRIORITY_1,
         FLASH_PTP_DEFAULT_CLOCK_CLASS,
         FLASH_PTP_DEFAULT_CLOCK_ACCURACY,
         FLASH_PTP_DEFAULT_CLOCK_VARIANCE,
         FLASH_PTP_DEFAULT_PRIORITY_2,
         nullptr,
-        FLASH_PTP_DEFAULT_STEPS_REMOVED
+        FLASH_PTP_DEFAULT_STEPS_REMOVED,
+        FLASH_PTP_DEFAULT_TIME_SOURCE
     };
 
     std::vector<Listener*> _listeners;

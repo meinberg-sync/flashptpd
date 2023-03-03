@@ -152,6 +152,28 @@ bool ServerMode::validateConfig(const Json &config, std::vector<std::string> *er
         }
     }
 
+    it = config.find(FLASH_PTP_JSON_CFG_SERVER_MODE_TIME_SOURCE);
+    if (it != config.end()) {
+        if (!it->is_string()) {
+            errs->push_back(std::string("Type of property \"" FLASH_PTP_JSON_CFG_SERVER_MODE_TIME_SOURCE "\" " \
+                    "within object \"" FLASH_PTP_JSON_CFG_SERVER_MODE "\" " \
+                    "must be \"") + Json("").type_name() + "\" (hex).");
+            valid = false;
+        }
+        else {
+            it->get_to(str);
+            if (str.find("0x") == 0)
+                str.erase(0, 2);
+            d = strtol(str.c_str(), nullptr, 16);
+            if (d < 0x10 || d > 0xfe) {
+                errs->push_back("Value of property \"" FLASH_PTP_JSON_CFG_SERVER_MODE_TIME_SOURCE "\" " \
+                        "within object \"" FLASH_PTP_JSON_CFG_SERVER_MODE "\" " \
+                        "must be between \"0x10\" and \"0xfe\".");
+                valid = false;
+            }
+        }
+    }
+
     it = config.find(FLASH_PTP_JSON_CFG_SERVER_MODE_LISTENERS);
     if (it != config.end()) {
         if (!it->is_array()) {
@@ -198,40 +220,50 @@ bool ServerMode::setConfig(const Json &config, std::vector<std::string> *errs)
 
     it = config.find(FLASH_PTP_JSON_CFG_SERVER_MODE_PRIORITY_1);
     if (it != config.end())
-        it->get_to(_bmcaComparisonDS.gmPriority1);
+        it->get_to(_serverStateDS.gmPriority1);
     else
-        _bmcaComparisonDS.gmPriority1 = FLASH_PTP_DEFAULT_PRIORITY_1;
+        _serverStateDS.gmPriority1 = FLASH_PTP_DEFAULT_PRIORITY_1;
 
     it = config.find(FLASH_PTP_JSON_CFG_SERVER_MODE_CLOCK_CLASS);
     if (it != config.end())
-        it->get_to(_bmcaComparisonDS.gmClockClass);
+        it->get_to(_serverStateDS.gmClockClass);
     else
-        _bmcaComparisonDS.gmClockClass = FLASH_PTP_DEFAULT_CLOCK_CLASS;
+        _serverStateDS.gmClockClass = FLASH_PTP_DEFAULT_CLOCK_CLASS;
 
     it = config.find(FLASH_PTP_JSON_CFG_SERVER_MODE_CLOCK_ACCURACY);
     if (it != config.end()) {
         it->get_to(str);
         if (str.find("0x") == 0)
             str.erase(0, 2);
-        _bmcaComparisonDS.gmClockAccuracy = (uint8_t)strtol(str.c_str(), nullptr, 16);
+        _serverStateDS.gmClockAccuracy = (uint8_t)strtol(str.c_str(), nullptr, 16);
     }
     else
-        _bmcaComparisonDS.gmClockAccuracy = FLASH_PTP_DEFAULT_CLOCK_ACCURACY;
+        _serverStateDS.gmClockAccuracy = FLASH_PTP_DEFAULT_CLOCK_ACCURACY;
 
     it = config.find(FLASH_PTP_JSON_CFG_SERVER_MODE_CLOCK_VARIANCE);
     if (it != config.end())
-        it->get_to(_bmcaComparisonDS.gmClockVariance);
+        it->get_to(_serverStateDS.gmClockVariance);
     else
-        _bmcaComparisonDS.gmClockVariance = FLASH_PTP_DEFAULT_CLOCK_VARIANCE;
+        _serverStateDS.gmClockVariance = FLASH_PTP_DEFAULT_CLOCK_VARIANCE;
 
     it = config.find(FLASH_PTP_JSON_CFG_SERVER_MODE_PRIORITY_2);
     if (it != config.end())
-        it->get_to(_bmcaComparisonDS.gmPriority2);
+        it->get_to(_serverStateDS.gmPriority2);
     else
-        _bmcaComparisonDS.gmPriority2 = FLASH_PTP_DEFAULT_PRIORITY_2;
+        _serverStateDS.gmPriority2 = FLASH_PTP_DEFAULT_PRIORITY_2;
 
-    _bmcaComparisonDS.gmClockID.reset();
-    _bmcaComparisonDS.stepsRemoved = FLASH_PTP_DEFAULT_STEPS_REMOVED;
+    _serverStateDS.gmClockID.reset();
+    _serverStateDS.stepsRemoved = FLASH_PTP_DEFAULT_STEPS_REMOVED;
+
+    it = config.find(FLASH_PTP_JSON_CFG_SERVER_MODE_TIME_SOURCE);
+    if (it != config.end()) {
+        it->get_to(str);
+        if (str.find("0x") == 0)
+            str.erase(0, 2);
+        _serverStateDS.timeSource = (uint8_t)strtol(str.c_str(), nullptr, 16);
+    }
+    else
+        _serverStateDS.timeSource = FLASH_PTP_DEFAULT_TIME_SOURCE;
 
     clearListeners();
     it = config.find(FLASH_PTP_JSON_CFG_SERVER_MODE_LISTENERS);
@@ -348,10 +380,10 @@ void ServerMode::processRequest(Request *req)
     }
 
     // If the BMCA comparison data set has been requested by the client, append it to the Response TLV.
-    if (tlv.hdr->flags & FLASH_PTP_FLAG_BMCA_COMPARISON_DS) {
-        *tlv.bmcaComparisonDS = _bmcaComparisonDS;
-        if (_bmcaComparisonDS.stepsRemoved == 0)
-            network::getInterfacePTPClockID(srcInterface, &tlv.bmcaComparisonDS->gmClockID);
+    if (tlv.hdr->flags & FLASH_PTP_FLAG_SERVER_STATE_DS) {
+        *tlv.serverStateDS = _serverStateDS;
+        if (_serverStateDS.stepsRemoved == 0)
+            network::getInterfacePTPClockID(srcInterface, &tlv.serverStateDS->gmClockID);
     }
 
     ptp->reorder();
