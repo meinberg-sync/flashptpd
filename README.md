@@ -44,7 +44,7 @@ Upon receipt of a complete Sync Request sequence, the server responds with Sync 
 | reqIngressTimestamp | 10 | 16 | ... |
 | reqCorrectionField | 8 | 26 | ... |
 | utcOffset | 2 | 34 | ... |
-| bmcaComparisonDS | 0+N | 36 | ... |
+| serverStateDS | 0+N | 36 | ... |
 <br>
 
 Once a complete Sync Request / Sync Response sequence has been exchanged, mean path delay and offset can be calculated as follows:
@@ -85,7 +85,7 @@ The following implementations are currently included:
 
 **Selections:**
 
- 1. **BMCA** - Best master clock algorithm as defined in IEEE1588. Servers that shall be taken into consideration by this algorithm need to request the BMCA_COMPARISON_DS in the Sync Request TLV. You need to explicitely configure "bmcaComparisonDSSpan" for each server. The algorithm will then select the configured amount of servers with the best PTP quality parameters. As of now, the BMCA quality parameters in flashptpd server mode can only be specified via configuration. Therefore, the outcome of the BMCA selection algorithm is kind of predefined and it does not really make sense to use it.
+ 1. **BMCA** - Best master clock algorithm as defined in IEEE1588. Servers that shall be taken into consideration by this algorithm need to request the FlashPTPServerStateDS in the Sync Request TLV. You need to explicitely configure "serverStateSpan" for each server. The algorithm will then select the configured amount of servers with the best PTP quality parameters. As of now, the BMCA quality parameters in flashptpd server mode can only be specified via configuration. Therefore, the outcome of the BMCA selection algorithm is kind of predefined and it does not really make sense to use it.
  2. **Standard Deviation** - Selects the configured amount of servers with the best (lowest) standard deviation in the measured offsets.
 
 
