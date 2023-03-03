@@ -5,6 +5,7 @@
 ![Communication Flow Diagram](Communication_Flow.png)
 
 **Sync Request**
+<br>
 The client  sends  Sync and Follow Up Messages (assuming  that  Two-Step  mode  is  running) with a Request TLV attached  to  either  of  them.
 
  - **t1** - Sync Message egress  timestamp (Client)
@@ -12,16 +13,18 @@ The client  sends  Sync and Follow Up Messages (assuming  that  Two-Step  mode  
 <br>
 
 **Sync Response**
+<br>
 Upon receipt of a complete Sync Request sequence, the server responds with Sync and Follow Up Messages (again, assuming Two-Step mode) with a Response TLV attached to the same message as in the Request sequence.
  - **t3** - Sync Message egress timestamp (Server)
  - **t4** - Sync Message ingress timestamp (Client)
 <br>
 
 **Request TLV**
+<br>
 | Field | Octets | TLV Offset | Value |
 |--|--|--|--|
 | tlvType | 2 | 0 | 3 (ORG_EXT) |
-| lengthField | 2 | 2 | 22+N |
+| lengthField | 2 | 2 | 36+N |
 | organizationId | 3 | 4 | 0xEC4670 |
 | organizationSubType | 3 | 7 | 0x526571 |
 | flags | 4 | 10 | ... |
@@ -29,10 +32,11 @@ Upon receipt of a complete Sync Request sequence, the server responds with Sync 
 <br>
 
 **Response TLV**
+<br>
 | Field | Octets | TLV Offset | Value |
 |--|--|--|--|
 | tlvType | 2 | 0 | 3 (ORG_EXT) |
-| lengthField | 2 | 2 | 22+N |
+| lengthField | 2 | 2 | 36+N |
 | organizationId | 3 | 4 | 0xEC4670 |
 | organizationSubType | 3 | 7 | 0x526573 |
 | flags | 4 | 10 | ... |
