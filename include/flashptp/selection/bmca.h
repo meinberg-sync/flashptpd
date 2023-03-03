@@ -16,9 +16,9 @@
  * been implemented, you should use standard deviation selection (@see stdDev.h), instead.
  *
  * If you want to use BMCA selection, anyway, please note that you need to enable
- * requesting BMCA_COMPARISON_DS from each server by setting the appropriate config
- * property "bmcaComparisonDSSpan" to the span between consecutive request packets
- * that shall include the data set.
+ * requesting FlashPTPServerStateDS from each server by setting the appropriate
+ * config property "serverStateSpan" to the span between consecutive request packets
+ * that shall include a request for the data set.
  *
  * =============================================================================
  *
@@ -57,10 +57,10 @@ public:
     inline BMCA() : Selection(SelectionType::bmca) { }
 
     /*
-     * Static member that compares the provided BMCA comparison data sets.
+     * Static member that compares the provided server state data sets.
      * Returns <0 if ds1 wins, >0 if ds2 wins and 0 if the data sets are equal.
      */
-    static int compare(const BMCAComparisonDataSet &ds1, const BMCAComparisonDataSet &ds2);
+    static int compare(const FlashPTPServerStateDS &ds1, const FlashPTPServerStateDS &ds2);
 
     // Select the configured amount of servers with the best BMCA (clock quality) parameters.
     std::vector<client::Server*> select(const std::vector<client::Server*> servers,

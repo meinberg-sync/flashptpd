@@ -50,7 +50,7 @@ class Sequence
 public:
     inline Sequence(const std::string &srcInterface, uint16_t srcEventPort, uint16_t srcGeneralPort,
             const network::Address &dstAddress, uint32_t msTimeout, uint16_t sequenceID,
-            PTPTimestampLevel timestampLevel, const struct timespec *timestamp, bool bmcaComparisonDSRequested)
+            PTPTimestampLevel timestampLevel, const struct timespec *timestamp, bool serverStateDSRequested)
     {
         clock_gettime(CLOCK_MONOTONIC, &_ts);
 
@@ -63,7 +63,7 @@ public:
 
         _timestampLevel = timestampLevel;
         _t1 = *timestamp;
-        _bmcaComparisonDSRequested = bmcaComparisonDSRequested;
+        _serverStateDSRequested = serverStateDSRequested;
     }
 
     inline const struct timespec &timestamp() const { return _ts; }
@@ -121,9 +121,9 @@ public:
             _t2Correction = *tlv->reqCorrectionField;
             if (_timestampLevel < PTPTimestampLevel::hardware)
                 _utcCorrection = (int64_t)*tlv->utcOffset * 1000000000LL;
-            if (tlv->bmcaComparisonDS) {
-                _bmcaComparisonDSValid = true;
-                _bmcaComparisonDS = *tlv->bmcaComparisonDS;
+            if (tlv->serverStateDS) {
+                _serverStateDSValid = true;
+                _serverStateDS = *tlv->serverStateDS;
             }
         }
 
@@ -156,9 +156,9 @@ public:
                 (_t1 + _t4 - _t4Correction - _utcCorrection)) / 2;
     }
 
-    inline bool bmcaComparisonDSRequested() const { return _bmcaComparisonDSRequested; }
-    inline bool bmcaComparisonDSValid() const { return _bmcaComparisonDSValid; }
-    inline const BMCAComparisonDataSet &bmcaComparisonDS() const { return _bmcaComparisonDS; }
+    inline bool serverStateDSRequested() const { return _serverStateDSRequested; }
+    inline bool serverStateDSValid() const { return _serverStateDSValid; }
+    inline const FlashPTPServerStateDS &serverStateDS() const { return _serverStateDS; }
 
     inline const PTP2Timestamp &t1() const { return _t1; }
 
@@ -192,9 +192,9 @@ private:
     PTP2TimeInterval _t4Correction;
 
     int64_t _utcCorrection{ 0 };
-    bool _bmcaComparisonDSRequested{ false };
-    bool _bmcaComparisonDSValid{ false };
-    BMCAComparisonDataSet _bmcaComparisonDS;
+    bool _serverStateDSRequested{ false };
+    bool _serverStateDSValid{ false };
+    FlashPTPServerStateDS _serverStateDS;
 
     int64_t _c2sDelay{ 0 };
     int64_t _s2cDelay{ 0 };

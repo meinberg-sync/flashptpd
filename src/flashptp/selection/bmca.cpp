@@ -33,7 +33,7 @@
 namespace flashptp {
 namespace selection {
 
-int BMCA::compare(const BMCAComparisonDataSet &ds1, const BMCAComparisonDataSet &ds2)
+int BMCA::compare(const FlashPTPServerStateDS &ds1, const FlashPTPServerStateDS &ds2)
 {
     if (ds1.gmPriority1 != ds2.gmPriority1)
         return (int)ds1.gmPriority1 - (int)ds2.gmPriority1;
@@ -60,25 +60,25 @@ int BMCA::compare(const BMCAComparisonDataSet &ds1, const BMCAComparisonDataSet 
 std::vector<client::Server*> BMCA::select(const std::vector<client::Server*> servers, clockid_t clockID)
 {
     std::vector<client::Server*> p, r;
-    BMCAComparisonDataSet bsds, cds;
+    FlashPTPServerStateDS bsds, cds;
     client::Server *bs;
     unsigned i, j;
 
     p = preprocess(servers, clockID);
     while (r.size() < _pick) {
         for (i = 0, j = p.size(); i < p.size(); ++i) {
-            if (!p[i]->bmcaComparisonDSValid())
+            if (!p[i]->serverStateDSValid())
                 continue;
 
             if (std::find(r.begin(), r.end(), p[i]) != r.end())
                 continue;
 
             if (j == p.size()) {
-                bsds = p[i]->bmcaComparisonDS();
+                bsds = p[i]->serverStateDS();
                 j = i;
             }
             else {
-                cds = p[i]->bmcaComparisonDS();
+                cds = p[i]->serverStateDS();
                 if (compare(bsds, cds) > 0) {
                     bsds = cds;
                     j = i;
