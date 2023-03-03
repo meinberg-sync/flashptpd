@@ -193,7 +193,7 @@ inline PTPTimestampLevel ptpTimestampLevelFromShortStr(const char *str)
 #define FLASH_PTP_FIXED_DOMAIN_NUMBER           0
 
 #define FLASH_PTP_DEFAULT_INTERVAL              0
-#define FLASH_PTP_DEFAULT_BMCA_COMP_DS_SPAN     0
+#define FLASH_PTP_DEFAULT_SERVER_STATE_SPAN     0
 
 #define FLASH_PTP_DEFAULT_FILTER_SIZE           16
 #define FLASH_PTP_DEFAULT_FILTER_PICK           1
@@ -228,7 +228,7 @@ inline PTPTimestampLevel ptpTimestampLevelFromShortStr(const char *str)
 #define FLASH_PTP_RESPONSE_SUB_TYPE_2           0x73  // s
 
 // Flags used with FlashPTPTLVHdr::flags
-#define FLASH_PTP_FLAG_BMCA_COMPARISON_DS       0x1
+#define FLASH_PTP_FLAG_SERVER_STATE_DS          0x1
 
 // Error Codes used with FlashPTPRespTLV::error
 #define FLASH_PTP_ERROR_OP_MODE_NOT_SUPP        0x0001
@@ -632,7 +632,7 @@ struct FlashPTPTLVHdr
     }
 };
 
-struct BMCAComparisonDataSet
+struct FlashPTPServerStateDS
 {
     uint8_t gmPriority1{ 0 };
     uint8_t gmClockClass{ 0 };
@@ -641,6 +641,8 @@ struct BMCAComparisonDataSet
     uint8_t gmPriority2{ 0 };
     PTP2ClockID gmClockID;
     uint16_t stepsRemoved{ 0 };
+    uint8_t timeSource{ 0 };
+    uint8_t reserved{ 0 };
 
     inline void reorder(bool ntoh = true)
     {
@@ -654,9 +656,9 @@ struct BMCAComparisonDataSet
         }
     }
 
-    BMCAComparisonDataSet() = default;
-    inline BMCAComparisonDataSet(uint8_t p1, uint8_t cc, uint8_t ca, uint16_t cv, uint8_t p2,
-            PTP2ClockID *id, uint16_t sr)
+    FlashPTPServerStateDS() = default;
+    inline FlashPTPServerStateDS(uint8_t p1, uint8_t cc, uint8_t ca, uint16_t cv, uint8_t p2,
+            PTP2ClockID *id, uint16_t sr, uint8_t ts)
     {
         gmPriority1 = p1;
         gmClockClass = cc;
@@ -666,9 +668,10 @@ struct BMCAComparisonDataSet
         if (id)
             gmClockID = *id;
         stepsRemoved = sr;
+        timeSource = ts;
     }
 
-    inline std::string toShortStr() const
+    inline std::string toBMCAStr() const
     {
         std::stringstream sstr;
         sstr << unsigned(gmPriority1);
@@ -724,8 +727,8 @@ struct FlashPTPReqTLV
         pos += sizeof(*hdr);
 
         padlen = sizeof(uint16_t) + sizeof(PTP2Timestamp) + sizeof(PTP2TimeInterval) + sizeof(int16_t);
-        if (ntohl(hdr->flags) & FLASH_PTP_FLAG_BMCA_COMPARISON_DS)
-            padlen += sizeof(BMCAComparisonDataSet);
+        if (ntohl(hdr->flags) & FLASH_PTP_FLAG_SERVER_STATE_DS)
+            padlen += sizeof(FlashPTPServerStateDS);
         if (len < padlen)
             return;
         pad = (uint8_t*)&ptr[pos];
@@ -757,8 +760,8 @@ struct FlashPTPReqTLV
         pos += sizeof(*hdr);
 
         padlen = sizeof(uint16_t) + sizeof(PTP2Timestamp) + sizeof(PTP2TimeInterval) + sizeof(int16_t);
-        if (flags & FLASH_PTP_FLAG_BMCA_COMPARISON_DS)
-            padlen += sizeof(BMCAComparisonDataSet);
+        if (flags & FLASH_PTP_FLAG_SERVER_STATE_DS)
+            padlen += sizeof(FlashPTPServerStateDS);
         if (len < padlen)
             return;
         pad = (uint8_t*)&ptr[pos];
@@ -783,7 +786,7 @@ struct FlashPTPRespTLV
     PTP2Timestamp *reqIngressTimestamp{ nullptr };
     PTP2TimeInterval *reqCorrectionField{ nullptr };
     int16_t *utcOffset{ nullptr };
-    BMCAComparisonDataSet *bmcaComparisonDS{ nullptr };
+    FlashPTPServerStateDS *serverStateDS{ nullptr };
 
     inline void reorder(bool ntoh = true)
     {
@@ -801,8 +804,8 @@ struct FlashPTPRespTLV
             *error = htons(*error);
             *utcOffset = htons(*utcOffset);
         }
-        if (bmcaComparisonDS)
-            bmcaComparisonDS->reorder(ntoh);
+        if (serverStateDS)
+            serverStateDS->reorder(ntoh);
     }
 
     inline void rxRestore(const uint8_t *ptr, uint16_t len)
@@ -846,12 +849,12 @@ struct FlashPTPRespTLV
         len -= sizeof(*utcOffset);
         pos += sizeof(*utcOffset);
 
-        if (ntohl(hdr->flags) & FLASH_PTP_FLAG_BMCA_COMPARISON_DS) {
-            if (len < sizeof(*bmcaComparisonDS))
+        if (ntohl(hdr->flags) & FLASH_PTP_FLAG_SERVER_STATE_DS) {
+            if (len < sizeof(*serverStateDS))
                 return;
-            bmcaComparisonDS = (BMCAComparisonDataSet*)&ptr[pos];
-            len -= sizeof(*bmcaComparisonDS);
-            pos += sizeof(*bmcaComparisonDS);
+            serverStateDS = (FlashPTPServerStateDS*)&ptr[pos];
+            len -= sizeof(*serverStateDS);
+            pos += sizeof(*serverStateDS);
         }
 
         valid = true;
@@ -907,13 +910,13 @@ struct FlashPTPRespTLV
         len -= sizeof(*utcOffset);
         pos += sizeof(*utcOffset);
 
-        if (flags & FLASH_PTP_FLAG_BMCA_COMPARISON_DS) {
-            if (len < sizeof(*bmcaComparisonDS))
+        if (flags & FLASH_PTP_FLAG_SERVER_STATE_DS) {
+            if (len < sizeof(*serverStateDS))
                 return;
-            bmcaComparisonDS = (BMCAComparisonDataSet*)&ptr[pos];
-            *bmcaComparisonDS = BMCAComparisonDataSet();
-            len -= sizeof(*bmcaComparisonDS);
-            pos += sizeof(*bmcaComparisonDS);
+            serverStateDS = (FlashPTPServerStateDS*)&ptr[pos];
+            *serverStateDS = FlashPTPServerStateDS();
+            len -= sizeof(*serverStateDS);
+            pos += sizeof(*serverStateDS);
         }
 
         hdr->tlvLength = pos;
