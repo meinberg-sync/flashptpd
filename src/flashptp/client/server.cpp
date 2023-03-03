@@ -209,9 +209,7 @@ bool Server::validateConfig(const Json &config, std::vector<std::string> *errs)
         }
     }
 
-    it = config.find(FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVER_BMCA_DS_SPAN);
-    if (it == config.end())
-        it = config.find(FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVER_BMCA_COMP_DS_SPAN);
+    it = config.find(FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVER_SERVER_STATE_SPAN);
     if (it != config.end() && !it->is_number_unsigned()) {
         errs->push_back(std::string("Type of property \"") + it.key() + "\" within items of \""
                 FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVERS "\" must be \"" + Json((unsigned)1).type_name() + "\".");
@@ -368,13 +366,11 @@ bool Server::setConfig(const Json &config)
     else
         _interval = FLASH_PTP_DEFAULT_INTERVAL;
 
-    it = config.find(FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVER_BMCA_DS_SPAN);
-    if (it == config.end())
-        it = config.find(FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVER_BMCA_COMP_DS_SPAN);
+    it = config.find(FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVER_SERVER_STATE_SPAN);
     if (it != config.end())
-        it->get_to(_bmcaComparisonDSSpan);
+        it->get_to(_serverStateSpan);
     else
-        _bmcaComparisonDSSpan = FLASH_PTP_DEFAULT_BMCA_COMP_DS_SPAN;
+        _serverStateSpan = FLASH_PTP_DEFAULT_SERVER_STATE_SPAN;
 
     it = config.find(FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVER_MS_TIMEOUT);
     if (it != config.end())
@@ -537,10 +533,10 @@ void Server::onSequenceComplete(Sequence *seq)
     _reach <<= 1;
     _reach |= 1;
 
-    if (seq->bmcaComparisonDSRequested()) {
-        _bmcaComparisonDSValid = seq->bmcaComparisonDSValid();
-        if (_bmcaComparisonDSValid)
-            _bmcaComparisonDS = seq->bmcaComparisonDS();
+    if (seq->serverStateDSRequested()) {
+        _serverStateDSValid = seq->serverStateDSValid();
+        if (_serverStateDSValid)
+            _serverStateDS = seq->serverStateDS();
     }
 
     cppLog::tracef("Request Sequence complete - Server %s, ID %u, Reach 0x%04x, Delay %s, Offset %s",
@@ -592,8 +588,8 @@ void Server::onSequenceTimeout(Sequence *seq)
     _reach <<= 1;
     _reach &= ~1;
 
-    if (seq->bmcaComparisonDSRequested())
-        _bmcaComparisonDSValid = false;
+    if (seq->serverStateDSRequested())
+        _serverStateDSValid = false;
 
     if (_reach == 0xfffe)
         cppLog::infof("Request timed out unexpectedly (Reach was 0xffff) - Server %s, ID %u",
@@ -608,7 +604,7 @@ void Server::onSequenceTimeout(Sequence *seq)
                     _dstAddress.str().c_str(), _reach & 0xffff);
         _state = ServerState::unreachable;
         _calculation->reset();
-        _bmcaComparisonDSValid = false;
+        _serverStateDSValid = false;
     }
 
     bool remove = true;
@@ -654,12 +650,12 @@ std::string Server::printState() const
     sstr << std::setw(FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_SERVER) << std::left << _dstAddress.str();
     sstr << std::setw(FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_CLOCK) << std::left << clockStr;
 
-    if (_bmcaComparisonDSValid) {
-        sstr << std::setw(FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_BMCA_DS) << std::left <<
-                _bmcaComparisonDS.toShortStr();
+    if (_serverStateDSValid) {
+        sstr << std::setw(FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_BMCA) << std::left <<
+                _serverStateDS.toBMCAStr();
     }
     else
-        sstr << std::setw(FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_BMCA_DS) << std::left << "unknown";
+        sstr << std::setw(FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_BMCA) << std::left << "unknown";
 
     tsstr << "0x";
     tsstr << std::setfill('0') << std::setw(4) << std::hex << (unsigned)(_reach & 0xffff);
@@ -696,7 +692,7 @@ void Server::resetState()
     _state = ServerState::initializing;
     _reach = 0;
 
-    _bmcaComparisonDSValid = false;
+    _serverStateDSValid = false;
 
     _clockName.clear();
     _clockID = -1;
@@ -733,7 +729,7 @@ void Server::threadFunc()
     PTP2Message *ptp;
     FlashPTPReqTLV tlv;
 
-    bool requestBMCAComparisonDS;
+    bool requestServerStateDS;
     PTPTimestampLevel currentLevel;
     struct timespec timestamp;
     uint16_t sequenceID;
@@ -774,9 +770,9 @@ void Server::threadFunc()
         currentLevel = _timestampLevel;
 
         // Check, if BMCA comparison data set is to be requested for the next sequence
-        requestBMCAComparisonDS = _bmcaComparisonDSSpan && (sequenceID % _bmcaComparisonDSSpan == 0);
+        requestServerStateDS = _serverStateSpan && (sequenceID % _serverStateSpan == 0);
         tlv.txPrepare(&buf[sizeof(*ptp)], sizeof(buf) - sizeof(*ptp),
-                requestBMCAComparisonDS ? FLASH_PTP_FLAG_BMCA_COMPARISON_DS : 0);
+                requestServerStateDS ? FLASH_PTP_FLAG_SERVER_STATE_DS : 0);
 
         *ptp = PTP2Message(PTPMessageType::sync,
                 _syncTLV ? (sizeof(*ptp) + tlv.len()) : sizeof(*ptp), !_oneStep);
@@ -797,7 +793,7 @@ void Server::threadFunc()
                 &currentLevel, &timestamp)) {
             if (_oneStep)
                 addSequence(new Sequence(_srcInterface, _srcEventPort, _srcEventPort,
-                        _dstAddress, _msTimeout, sequenceID, currentLevel, &timestamp, requestBMCAComparisonDS));
+                        _dstAddress, _msTimeout, sequenceID, currentLevel, &timestamp, requestServerStateDS));
             else {
                 *ptp = PTP2Message(PTPMessageType::followUp,
                         _syncTLV ? sizeof(*ptp) : (sizeof(*ptp) + tlv.len()), false);
@@ -812,7 +808,7 @@ void Server::threadFunc()
                 if (network::send(ptp, ntohs(ptp->totalLen), _srcInterface, _srcGeneralPort,
                         _dstAddress, _dstGeneralPort))
                     addSequence(new Sequence(_srcInterface, _srcEventPort, _srcEventPort,
-                            _dstAddress, _msTimeout, sequenceID, currentLevel, &timestamp, requestBMCAComparisonDS));
+                            _dstAddress, _msTimeout, sequenceID, currentLevel, &timestamp, requestServerStateDS));
             }
         }
 

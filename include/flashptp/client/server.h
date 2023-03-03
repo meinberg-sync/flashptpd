@@ -17,13 +17,13 @@
  * or timed out sequences within a 16-bit shift register (reach).
  *
  * Please note, that if you want to use BMCA selection algorithm, you need to enable
- * requesting BMCA_COMPARISON_DS by setting the appropriate config property
- * "bmcaComparisonDSSpan" to the span between consecutive request packets that
- * shall include the data set.
+ * requesting FlashPTPServerStateDS by setting the appropriate config property
+ * "serverStateSpan" to the span between consecutive request packets that shall
+ * include a request for the data set.
  *
- * Examples:    0 = Do not request BMCA_COMPARISON_DS
- *              1 = Request BMCA_COMPARISON_DS in each packet
- *              8 = Request BMCA_COMPARISON_DS in every eighth packet
+ * Examples:    0 = Never request FlashPTPServerStateDataSet
+ *              1 = Request FlashPTPServerStateDataSet in each request packet
+ *              8 = Request FlashPTPServerStateDataSet in every eighth packet
  *
  * =============================================================================
  *
@@ -65,7 +65,7 @@
 #define FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_STATE                    2
 #define FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_SERVER                   18
 #define FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_CLOCK                    11
-#define FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_BMCA_DS                  28
+#define FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_BMCA                     28
 #define FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_REACH                    9
 #define FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_INTV                     7
 #define FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_DELAY                    13
@@ -74,7 +74,7 @@
 #define FLASH_PTP_CLIENT_MODE_SERVER_STATS_LEN                          FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_STATE + \
                                                                         FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_SERVER + \
                                                                         FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_CLOCK + \
-                                                                        FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_BMCA_DS + \
+                                                                        FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_BMCA + \
                                                                         FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_INTV + \
                                                                         FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_REACH + \
                                                                         FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_DELAY + \
@@ -94,8 +94,7 @@
 #define FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVER_ONE_STEP                  "oneStep"
 #define FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVER_SYNC_TLV                  "syncTLV"
 #define FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVER_INTERVAL                  "interval"
-#define FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVER_BMCA_DS_SPAN              "bmcaDSSpan"
-#define FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVER_BMCA_COMP_DS_SPAN         "bmcaComparisonDSSpan"
+#define FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVER_SERVER_STATE_SPAN         "serverStateSpan"
 #define FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVER_MS_TIMEOUT                "msTimeout"
 
 #define FLASH_PTP_JSON_CFG_SERVER_MODE_SERVER_TIMESTAMP_LEVEL           "timestampLevel"
@@ -133,10 +132,10 @@ public:
     inline ServerState state() const { std::shared_lock sl(_mutex); return _state; }
     inline void setState(ServerState state) { std::unique_lock ul(_mutex); _state = state; }
 
-    inline bool bmcaComparisonDSValid() const
-    { std::shared_lock sl(_mutex); return _bmcaComparisonDSValid; }
-    inline BMCAComparisonDataSet bmcaComparisonDS() const
-    { std::shared_lock sl(_mutex); return _bmcaComparisonDS; }
+    inline bool serverStateDSValid() const
+    { std::shared_lock sl(_mutex); return _serverStateDSValid; }
+    inline FlashPTPServerStateDS serverStateDS() const
+    { std::shared_lock sl(_mutex); return _serverStateDS; }
 
     std::string clockName() const;
     clockid_t clockID() const;
@@ -210,7 +209,7 @@ private:
     bool _oneStep{ false };
     bool _syncTLV{ false };
     int8_t _interval{ FLASH_PTP_DEFAULT_INTERVAL };
-    uint16_t _bmcaComparisonDSSpan{ FLASH_PTP_DEFAULT_BMCA_COMP_DS_SPAN };
+    uint16_t _serverStateSpan{ FLASH_PTP_DEFAULT_SERVER_STATE_SPAN };
     uint32_t _msTimeout{ FLASH_PTP_DEFAULT_TIMEOUT_MS };
 
     PTPTimestampLevel _timestampLevel{ PTPTimestampLevel::hardware };
@@ -224,8 +223,8 @@ private:
     ServerState _state{ ServerState::initializing };
     uint16_t _reach{ 0 };
 
-    bool _bmcaComparisonDSValid{ false };
-    BMCAComparisonDataSet _bmcaComparisonDS;
+    bool _serverStateDSValid{ false };
+    FlashPTPServerStateDS _serverStateDS;
 
     std::string _clockName;
     clockid_t _clockID{ -1 };
