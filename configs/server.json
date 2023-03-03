@@ -20,6 +20,7 @@
         ],
         "priority1": 128,
         "priority2": 128,
+        "timeSource": "0x60",
         "utcOffset": 37
     }
 }

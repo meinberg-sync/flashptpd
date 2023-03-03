@@ -15,7 +15,6 @@
         },
         "servers": [
             {
-                "bmcaComparisonDSSpan": 64,
                 "calculation": {
                     "size": 8,
                     "type": "arithmeticMean"
@@ -33,6 +32,7 @@
                     }
                 ],
                 "interval": -6,
+                "serverStateSpan": 64,
                 "srcInterface": "ens33"
             }
         ]
