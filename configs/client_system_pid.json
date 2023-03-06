@@ -32,8 +32,8 @@
                     }
                 ],
                 "interval": -6,
-                "serverStateSpan": 64,
-                "srcInterface": "ens33"
+                "srcInterface": "ens33",
+                "stateInterval": 3
             }
         ]
     },

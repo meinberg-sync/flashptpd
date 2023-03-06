@@ -5,20 +5,17 @@
  *
  * This class implements the IEEE1588 best master clock algorithm as server selection
  * algorithm (@see Selection.h). Servers that shall be taken into consideration
- * by this algorithm need to request the BMCA_COMPARISON_DS in the Sync Request TLV.
- * The algorithm will then select the configured amount of servers (pick) with the
- * best PTP quality parameters.
+ * by this algorithm need to request the FlashPTPServerStateDS in the Sync Request.
+ * To enable it, set the appropriate config property "stateInterval" to the
+ * interval (2^n) in which the client shall attach a request for the data set
+ * to a Sync Request sequence. The algorithm will then select the configured amount
+ * of servers (pick) with the best PTP quality parameters.
  *
  * At the moment, the BMCA quality parameters in flashptpd server mode can only
  * be specified via configuration. Therefore, the outcome of the BMCA selection
  * algorithm is kind of predefined and does not really make sense. If you are using
  * flashptpd on the server-side and automatic BMCA parameter detection still has not
  * been implemented, you should use standard deviation selection (@see stdDev.h), instead.
- *
- * If you want to use BMCA selection, anyway, please note that you need to enable
- * requesting FlashPTPServerStateDS from each server by setting the appropriate
- * config property "serverStateSpan" to the span between consecutive request packets
- * that shall include a request for the data set.
  *
  * =============================================================================
  *
