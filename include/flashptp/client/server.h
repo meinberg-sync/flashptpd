@@ -17,13 +17,14 @@
  * or timed out sequences within a 16-bit shift register (reach).
  *
  * Please note, that if you want to use BMCA selection algorithm, you need to enable
- * requesting FlashPTPServerStateDS by setting the appropriate config property
- * "serverStateSpan" to the span between consecutive request packets that shall
- * include a request for the data set.
+ * periodical requests for FlashPTPServerStateDS by setting the appropriate config
+ * property "stateInterval" to the interval (2^n) in which the client shall attach
+ * a request for the data set to a Sync Request sequence. "stateInterval" must be
+ * equal to or bigger than "interval" (or "requestInterval").
  *
- * Examples:    0 = Never request FlashPTPServerStateDataSet
- *              1 = Request FlashPTPServerStateDataSet in each request packet
- *              8 = Request FlashPTPServerStateDataSet in every eighth packet
+ * Examples:    0x7f = Never request FlashPTPServerStateDataSet
+ *              0 = Request FlashPTPServerStateDataSet once per second
+ *              3 = Request FlashPTPServerStateDataSet every eighth second
  *
  * =============================================================================
  *
@@ -93,8 +94,9 @@
 
 #define FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVER_ONE_STEP                  "oneStep"
 #define FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVER_SYNC_TLV                  "syncTLV"
+#define FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVER_REQUEST_INTERVAL          "requestInterval"
 #define FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVER_INTERVAL                  "interval"
-#define FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVER_SERVER_STATE_SPAN         "serverStateSpan"
+#define FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVER_STATE_INTERVAL            "stateInterval"
 #define FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVER_MS_TIMEOUT                "msTimeout"
 
 #define FLASH_PTP_JSON_CFG_SERVER_MODE_SERVER_TIMESTAMP_LEVEL           "timestampLevel"
@@ -209,7 +211,7 @@ private:
     bool _oneStep{ false };
     bool _syncTLV{ false };
     int8_t _interval{ FLASH_PTP_DEFAULT_INTERVAL };
-    uint16_t _serverStateSpan{ FLASH_PTP_DEFAULT_SERVER_STATE_SPAN };
+    int8_t _stateInterval{ FLASH_PTP_DEFAULT_STATE_INTERVAL };
     uint32_t _msTimeout{ FLASH_PTP_DEFAULT_TIMEOUT_MS };
 
     PTPTimestampLevel _timestampLevel{ PTPTimestampLevel::hardware };

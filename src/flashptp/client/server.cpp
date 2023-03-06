@@ -66,6 +66,7 @@ bool Server::validateConfig(const Json &config, std::vector<std::string> *errs)
     }
 
     Json::const_iterator it, iit;
+    int8_t requestInterval, stateInterval;
     bool valid = true;
 
     it = config.find(FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVER_DST_ADDRESS);
@@ -191,29 +192,42 @@ bool Server::validateConfig(const Json &config, std::vector<std::string> *errs)
         valid = false;
     }
 
-    it = config.find(FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVER_INTERVAL);
+    it = config.find(FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVER_REQUEST_INTERVAL);
+    if (it == config.end())
+        it = config.find(FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVER_INTERVAL);
     if (it != config.end()) {
         if (!it->is_number_integer()) {
-            errs->push_back(std::string("Type of property \"" FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVER_INTERVAL "\" " \
+            errs->push_back(std::string("Type of property \"") + it.key() + "\" " \
                     "within items of \"" FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVERS "\" " \
-                    "must be \"") + Json((int)0).type_name() + "\".");
+                    "must be \"" + Json((int)0).type_name() + "\".");
             valid = false;
         }
         else {
-            int8_t interval = it->get<int8_t>();
-            if (interval < -7 || interval > 7) {
-                errs->push_back(std::to_string(interval) + " is not a valid value (-7 <= n <= +7) " \
-                        "for property \"" FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVER_INTERVAL "\".");
+            requestInterval = it->get<int8_t>();
+            if (requestInterval < -7 || requestInterval > 7) {
+                errs->push_back(std::to_string(requestInterval) + " is not a valid value (-7 <= n <= +7) " \
+                        "for property \"" + it.key() + "\".");
                 valid = false;
             }
         }
     }
 
-    it = config.find(FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVER_SERVER_STATE_SPAN);
-    if (it != config.end() && !it->is_number_unsigned()) {
-        errs->push_back(std::string("Type of property \"") + it.key() + "\" within items of \""
-                FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVERS "\" must be \"" + Json((unsigned)1).type_name() + "\".");
-        valid = false;
+    it = config.find(FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVER_STATE_INTERVAL);
+    if (it != config.end()) {
+        if (!it->is_number_unsigned()) {
+            errs->push_back(std::string("Type of property \"" FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVER_STATE_INTERVAL \
+                    "\" within items of \"" FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVERS "\" " \
+                    "must be \"") + Json((int)0).type_name() + "\".");
+            valid = false;
+        }
+        else {
+            stateInterval = it->get<int8_t>();
+            if (stateInterval < requestInterval || stateInterval > 7) {
+                errs->push_back(std::to_string(stateInterval) + " is not a valid value (" +
+                        std::to_string(requestInterval) + " <= n <= +7) for property \"" + it.key() + "\".");
+                valid = false;
+            }
+        }
     }
 
     it = config.find(FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVER_MS_TIMEOUT);
@@ -360,17 +374,19 @@ bool Server::setConfig(const Json &config)
             _syncTLV = false;
     }
 
-    it = config.find(FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVER_INTERVAL);
+    it = config.find(FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVER_REQUEST_INTERVAL);
+    if (it == config.end())
+        it = config.find(FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVER_INTERVAL);
     if (it != config.end())
         it->get_to(_interval);
     else
         _interval = FLASH_PTP_DEFAULT_INTERVAL;
 
-    it = config.find(FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVER_SERVER_STATE_SPAN);
+    it = config.find(FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVER_STATE_INTERVAL);
     if (it != config.end())
-        it->get_to(_serverStateSpan);
+        it->get_to(_stateInterval);
     else
-        _serverStateSpan = FLASH_PTP_DEFAULT_SERVER_STATE_SPAN;
+        _stateInterval = FLASH_PTP_DEFAULT_STATE_INTERVAL;
 
     it = config.find(FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVER_MS_TIMEOUT);
     if (it != config.end())
@@ -735,7 +751,7 @@ void Server::threadFunc()
     uint16_t sequenceID;
     std::string phcName;
     clockid_t phcID;
-    int32_t usec;
+    int32_t usec, stateUsec;
     time_t tprev;
 
 
@@ -751,6 +767,7 @@ void Server::threadFunc()
 
     clock_gettime(CLOCK_MONOTONIC, &timestamp);
     tprev = timestamp.tv_sec;
+    stateUsec = 0;
     usec = 0;
 
     while (_running) {
@@ -770,7 +787,7 @@ void Server::threadFunc()
         currentLevel = _timestampLevel;
 
         // Check, if BMCA comparison data set is to be requested for the next sequence
-        requestServerStateDS = _serverStateSpan && (sequenceID % _serverStateSpan == 0);
+        requestServerStateDS = _stateInterval != 0x7f && stateUsec == 0;
         tlv.txPrepare(&buf[sizeof(*ptp)], sizeof(buf) - sizeof(*ptp),
                 requestServerStateDS ? FLASH_PTP_FLAG_SERVER_STATE_DS : 0);
 
@@ -812,16 +829,23 @@ void Server::threadFunc()
             }
         }
 
+        // Reset stateUsec to the configured state interval (microseconds),
+        // if a state request has been transmitted
+        if (requestServerStateDS)
+            stateUsec = (int32_t)(pow(2, _stateInterval) * 1000000L);
+
 interval_sleep:
         // Sleep for the duration of the configured request interval before sending the next Sync Request.
         if (usec) {
             if (usec > 100000) {
                 std::this_thread::sleep_for(std::chrono::microseconds(100000));
+                stateUsec -= 100000;
                 usec -= 100000;
                 continue;
             }
             else {
                 std::this_thread::sleep_for(std::chrono::microseconds(usec));
+                stateUsec -= usec;
                 usec = 0;
             }
         }

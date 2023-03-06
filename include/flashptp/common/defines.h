@@ -193,7 +193,7 @@ inline PTPTimestampLevel ptpTimestampLevelFromShortStr(const char *str)
 #define FLASH_PTP_FIXED_DOMAIN_NUMBER           0
 
 #define FLASH_PTP_DEFAULT_INTERVAL              0
-#define FLASH_PTP_DEFAULT_SERVER_STATE_SPAN     0
+#define FLASH_PTP_DEFAULT_STATE_INTERVAL        0x7f
 
 #define FLASH_PTP_DEFAULT_FILTER_SIZE           16
 #define FLASH_PTP_DEFAULT_FILTER_PICK           1
