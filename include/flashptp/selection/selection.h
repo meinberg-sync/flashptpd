@@ -13,6 +13,9 @@
  * configured (pick). If more than one server is being selected, the adjustment
  * algorithm averages the measured offset and drift values.
  *
+ * A server is considered as "falseticker" and will not be selected, if the
+ * configured delay threshold (default: 1.5 seconds) is exceeded.
+ *
  * =============================================================================
  *
  * Permission is hereby granted, free of charge, to any person obtaining
