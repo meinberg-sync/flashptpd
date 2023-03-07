@@ -275,6 +275,14 @@ bool Server::validateConfig(const Json &config, std::vector<std::string> *errs)
         }
     }
 
+    it = config.find(FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVER_NO_SELECT);
+    if (it != config.end() && !it->is_boolean()) {
+        errs->push_back(std::string("Type of property \"" FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVER_NO_SELECT "\" " \
+                "within items of \"" FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVERS "\" " \
+                "must be \"") + Json(false).type_name() + "\".");
+        valid = false;
+    }
+
     it = config.find(FLASH_PTP_JSON_CFG_SERVER_MODE_SERVER_TIMESTAMP_LEVEL);
     if (it != config.end()) {
         if (!it->is_string()) {
@@ -420,6 +428,12 @@ bool Server::setConfig(const Json &config)
         it->get_to(_msTimeout);
     else
         _msTimeout = FLASH_PTP_DEFAULT_TIMEOUT_MS;
+
+    it = config.find(FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVER_NO_SELECT);
+    if (it != config.end())
+        it->get_to(_noSelect);
+    else
+        _noSelect = false;
 
     it = config.find(FLASH_PTP_JSON_CFG_SERVER_MODE_SERVER_TIMESTAMP_LEVEL);
     if (it != config.end())

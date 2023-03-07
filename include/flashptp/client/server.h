@@ -98,6 +98,7 @@
 #define FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVER_INTERVAL                  "interval"
 #define FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVER_STATE_INTERVAL            "stateInterval"
 #define FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVER_MS_TIMEOUT                "msTimeout"
+#define FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVER_NO_SELECT                 "noSelect"
 
 #define FLASH_PTP_JSON_CFG_SERVER_MODE_SERVER_TIMESTAMP_LEVEL           "timestampLevel"
 #define FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVER_FILTERS                   "filters"
@@ -134,6 +135,7 @@ public:
     inline bool invalid() const { return _invalid; }
     inline const network::Address &dstAddress() const { return _dstAddress; }
     inline calculation::Calculation *calculation() { return _calculation; }
+    inline bool noSelect() const { return _noSelect; }
 
     inline ServerState state() const { std::shared_lock sl(_mutex); return _state; }
     inline void setState(ServerState state) { std::unique_lock ul(_mutex); _state = state; }
@@ -217,6 +219,7 @@ private:
     int8_t _interval{ FLASH_PTP_DEFAULT_INTERVAL };
     int8_t _stateInterval{ FLASH_PTP_DEFAULT_STATE_INTERVAL };
     uint32_t _msTimeout{ FLASH_PTP_DEFAULT_TIMEOUT_MS };
+    bool _noSelect{ false };
 
     PTPTimestampLevel _timestampLevel{ PTPTimestampLevel::hardware };
 
