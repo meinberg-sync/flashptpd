@@ -13,6 +13,9 @@
  * configured (pick). If more than one server is being selected, the adjustment
  * algorithm averages the measured offset and drift values.
  *
+ * A server is considered as "falseticker" and will not be selected, if the
+ * configured delay threshold (default: 1.5 seconds) is exceeded.
+ *
  * =============================================================================
  *
  * Permission is hereby granted, free of charge, to any person obtaining
@@ -44,6 +47,7 @@
 
 #define FLASH_PTP_JSON_CFG_SELECTION_TYPE                           "type"
 #define FLASH_PTP_JSON_CFG_SELECTION_PICK                           "pick"
+#define FLASH_PTP_JSON_CFG_SELECTION_DELAY_THRESHOLD                "delayThreshold"
 
 namespace flashptp {
 
@@ -100,6 +104,7 @@ public:
 protected:
     SelectionType _type{ SelectionType::invalid };
     unsigned _pick{ FLASH_PTP_DEFAULT_SELECTION_PICK };
+    uint64_t _delayThreshold{ FLASH_PTP_DEFAULT_SELECTION_DELAY_THRESHOLD };
 };
 
 }

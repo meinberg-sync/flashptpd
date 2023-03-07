@@ -114,6 +114,7 @@ enum class ServerState
     unreachable,
     collecting,
     ready,
+    falseticker,
     used,
     syspeer
 };
@@ -122,6 +123,9 @@ class Server : public Thread {
 public:
     Server(const Json &config);
     ~Server();
+
+    static const char *stateToStr(ServerState s);
+    static const char *stateToLongStr(ServerState s);
 
     static bool validateConfig(const Json &config, std::vector<std::string> *errs);
 

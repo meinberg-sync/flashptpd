@@ -57,6 +57,33 @@ Server::~Server()
     }
 }
 
+const char *Server::stateToStr(ServerState s)
+{
+    switch (s) {
+    case ServerState::initializing: return "?";
+    case ServerState::unreachable: return "!";
+    case ServerState::collecting: return "^";
+    case ServerState::falseticker: return "-";
+    case ServerState::used: return "+";
+    case ServerState::syspeer: return "*";
+    default: return " ";
+    }
+}
+
+const char *Server::stateToLongStr(ServerState s)
+{
+    switch (s) {
+    case ServerState::initializing: return "Initializing";
+    case ServerState::unreachable: return "Unreachable";
+    case ServerState::collecting: return "Collecting";
+    case ServerState::ready: return "Ready";
+    case ServerState::falseticker: return "Falseticker";
+    case ServerState::used: return "Used";
+    case ServerState::syspeer: return "System Peer";
+    default: return "Unknown";
+    }
+}
+
 bool Server::validateConfig(const Json &config, std::vector<std::string> *errs)
 {
     if (!config.is_object()) {
@@ -655,14 +682,7 @@ std::string Server::printState() const
 
     std::shared_lock sl(_mutex);
     sstr << std::setfill(' ');
-    switch (_state) {
-    case ServerState::initializing: sstr << "? "; break;
-    case ServerState::unreachable: sstr << "! "; break;
-    case ServerState::collecting: sstr << "^ "; break;
-    case ServerState::used: sstr << "+ "; break;
-    case ServerState::syspeer: sstr << "* "; break;
-    default: sstr << "  "; break;
-    }
+    sstr << Server::stateToStr(_state) << " ";
     sstr << std::setw(FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_SERVER) << std::left << _dstAddress.str();
     sstr << std::setw(FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_CLOCK) << std::left << clockStr;
 

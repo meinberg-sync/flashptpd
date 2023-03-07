@@ -129,6 +129,21 @@ bool Selection::validateConfig(const Json &config, std::vector<std::string> *err
         }
     }
 
+    it = config.find(FLASH_PTP_JSON_CFG_SELECTION_DELAY_THRESHOLD);
+    if (it != config.end()) {
+        if (!it->is_number_unsigned()) {
+            errs->push_back(std::string("Type of property \"" FLASH_PTP_JSON_CFG_SELECTION_DELAY_THRESHOLD "\" " \
+                    "within \"" FLASH_PTP_JSON_CFG_CLIENT_MODE_SELECTION "\" must be \"") +
+                    Json((unsigned)1).type_name() + "\".");
+            valid = false;
+        }
+        else if (it->get<unsigned>() == 0) {
+            errs->push_back(std::to_string(it->get<unsigned>()) + " is not a valid value (0 < n) " \
+                    "for property \"" FLASH_PTP_JSON_CFG_SELECTION_DELAY_THRESHOLD "\".");
+            valid = false;
+        }
+    }
+
     return valid;
 }
 
@@ -141,14 +156,33 @@ void Selection::setConfig(const Json &config)
         it->get_to(_pick);
     else
         _pick = FLASH_PTP_DEFAULT_SELECTION_PICK;
+
+    it = config.find(FLASH_PTP_JSON_CFG_SELECTION_DELAY_THRESHOLD);
+    if (it != config.end())
+        it->get_to(_delayThreshold);
+    else
+        _delayThreshold = FLASH_PTP_DEFAULT_SELECTION_DELAY_THRESHOLD;
 }
 
 std::vector<client::Server*> Selection::preprocess(const std::vector<client::Server*> servers, clockid_t clockID)
 {
     std::vector<client::Server*> v;
+    struct sockaddr_ll saddr_ll;
+
     for (auto *s: servers) {
         if (s->state() < client::ServerState::ready || s->clockID() != clockID)
             continue;
+
+        if (llabs(s->calculation()->delay()) > _delayThreshold) {
+            if (s->state() != client::ServerState::falseticker) {
+                cppLog::debugf("Consider server %s as %s due to delay threshold exceedance (%s > %s)",
+                        s->dstAddress().str().c_str(), client::Server::stateToLongStr(client::ServerState::falseticker),
+                        nanosecondsToStr(llabs(s->calculation()->delay())).c_str(),
+                        nanosecondsToStr(_delayThreshold).c_str());
+                s->setState(client::ServerState::falseticker);
+            }
+            continue;
+        }
 
         s->setState(client::ServerState::ready);
         v.push_back(s);
