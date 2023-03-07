@@ -44,6 +44,7 @@
 
 #define FLASH_PTP_JSON_CFG_SELECTION_TYPE                           "type"
 #define FLASH_PTP_JSON_CFG_SELECTION_PICK                           "pick"
+#define FLASH_PTP_JSON_CFG_SELECTION_DELAY_THRESHOLD                "delayThreshold"
 
 namespace flashptp {
 
@@ -100,6 +101,7 @@ public:
 protected:
     SelectionType _type{ SelectionType::invalid };
     unsigned _pick{ FLASH_PTP_DEFAULT_SELECTION_PICK };
+    uint64_t _delayThreshold{ FLASH_PTP_DEFAULT_SELECTION_DELAY_THRESHOLD };
 };
 
 }
