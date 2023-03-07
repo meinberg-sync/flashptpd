@@ -85,7 +85,7 @@ The following implementations are currently included:
 
 **Selections:**
 
- 1. **BMCA** - Best master clock algorithm as defined in IEEE1588. Servers that shall be taken into consideration by this algorithm need to request the FlashPTPServerStateDS in the Sync Request TLV. You need to explicitely configure "stateInterval" for each server. The algorithm will then select the configured amount of servers with the best PTP quality parameters. As of now, the BMCA quality parameters in flashptpd server mode can only be specified via configuration. Therefore, the outcome of the BMCA selection algorithm is kind of predefined and it does not really make sense to use it.
+ 1. **BTCA** - Best TimeTransmitter Clock Algorithm as defined in IEEE1588. Servers that shall be taken into consideration by this algorithm need to request the FlashPTPServerStateDS in the Sync Request TLV. You need to explicitely configure "stateInterval" for each server. The algorithm will then select the configured amount of servers with the best PTP quality parameters. As of now, the BTCA quality parameters in flashptpd server mode can only be specified via configuration. Therefore, the outcome of the BTCA selection algorithm is kind of predefined and it does not really make sense to use it.
  2. **Standard Deviation** - Selects the configured amount of servers with the best (lowest) standard deviation in the measured offsets.
 
 

@@ -667,11 +667,11 @@ std::string Server::printState() const
     sstr << std::setw(FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_CLOCK) << std::left << clockStr;
 
     if (_serverStateDSValid) {
-        sstr << std::setw(FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_BMCA) << std::left <<
-                _serverStateDS.toBMCAStr();
+        sstr << std::setw(FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_BTCA) << std::left <<
+                _serverStateDS.toBTCAStr();
     }
     else
-        sstr << std::setw(FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_BMCA) << std::left << "unknown";
+        sstr << std::setw(FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_BTCA) << std::left << "unknown";
 
     tsstr << "0x";
     tsstr << std::setfill('0') << std::setw(4) << std::hex << (unsigned)(_reach & 0xffff);
@@ -786,7 +786,7 @@ void Server::threadFunc()
         // Set currentLevel to the timestamp level to be used (as input value for network::send)
         currentLevel = _timestampLevel;
 
-        // Check, if BMCA comparison data set is to be requested for the next sequence
+        // Check, if FlashPTPServerStateDS is to be requested for the next sequence
         requestServerStateDS = _stateInterval != 0x7f && stateUsec == 0;
         tlv.txPrepare(&buf[sizeof(*ptp)], sizeof(buf) - sizeof(*ptp),
                 requestServerStateDS ? FLASH_PTP_FLAG_SERVER_STATE_DS : 0);

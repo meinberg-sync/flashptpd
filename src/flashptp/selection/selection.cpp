@@ -29,8 +29,8 @@
 
 #include <flashptp/selection/selection.h>
 #include <flashptp/selection/stdDev.h>
-#include <flashptp/selection/bmca.h>
 #include <flashptp/client/clientMode.h>
+#include "../../../include/flashptp/selection/btca.h"
 
 namespace flashptp {
 namespace selection {
@@ -39,7 +39,7 @@ const char *Selection::typeToStr(SelectionType t)
 {
     switch (t) {
     case SelectionType::stdDev: return "stdDev";
-    case SelectionType::bmca: return "bmca";
+    case SelectionType::btca: return "btca";
     default: return "invalid";
     }
 }
@@ -48,7 +48,7 @@ const char *Selection::typeToLongStr(SelectionType t)
 {
     switch (t) {
     case SelectionType::stdDev: return "bestStandardDeviation";
-    case SelectionType::bmca: return "bestMasterClock";
+    case SelectionType::btca: return "bestTimeTransmitterClock";
     default: return "invalid";
     }
 }
@@ -71,7 +71,7 @@ Selection *Selection::make(const Json &config)
 
     switch (type) {
     case SelectionType::stdDev: sel = new StdDev(); break;
-    case SelectionType::bmca: sel = new BMCA(); break;
+    case SelectionType::btca: sel = new BTCA(); break;
     default: break;
     }
 

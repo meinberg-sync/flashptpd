@@ -1,5 +1,5 @@
 /*
- * @file bmca.cpp
+ * @file btca.cpp
  * @note Copyright 2023, Meinberg Funkuhren GmbH & Co. KG, All rights reserved.
  * @author Thomas Behn <thomas.behn@meinberg.de>
  *
@@ -27,13 +27,13 @@
  *
  */
 
-#include <flashptp/selection/bmca.h>
+#include <flashptp/selection/btca.h>
 #include <flashptp/client/server.h>
 
 namespace flashptp {
 namespace selection {
 
-int BMCA::compare(const FlashPTPServerStateDS &ds1, const FlashPTPServerStateDS &ds2)
+int BTCA::compare(const FlashPTPServerStateDS &ds1, const FlashPTPServerStateDS &ds2)
 {
     if (ds1.gmPriority1 != ds2.gmPriority1)
         return (int)ds1.gmPriority1 - (int)ds2.gmPriority1;
@@ -57,7 +57,7 @@ int BMCA::compare(const FlashPTPServerStateDS &ds1, const FlashPTPServerStateDS 
         return (int)ds1.stepsRemoved - (int)ds2.stepsRemoved;
 }
 
-std::vector<client::Server*> BMCA::select(const std::vector<client::Server*> servers, clockid_t clockID)
+std::vector<client::Server*> BTCA::select(const std::vector<client::Server*> servers, clockid_t clockID)
 {
     std::vector<client::Server*> p, r;
     FlashPTPServerStateDS bsds, cds;

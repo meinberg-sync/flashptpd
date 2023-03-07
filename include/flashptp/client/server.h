@@ -16,7 +16,7 @@
  * is ready (@see Calculation::fullyLoaded). It also records the number of completed
  * or timed out sequences within a 16-bit shift register (reach).
  *
- * Please note, that if you want to use BMCA selection algorithm, you need to enable
+ * Please note, that if you want to use BTCA selection algorithm, you need to enable
  * periodical requests for FlashPTPServerStateDS by setting the appropriate config
  * property "stateInterval" to the interval (2^n) in which the client shall attach
  * a request for the data set to a Sync Request sequence. "stateInterval" must be
@@ -66,7 +66,7 @@
 #define FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_STATE                    2
 #define FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_SERVER                   18
 #define FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_CLOCK                    11
-#define FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_BMCA                     28
+#define FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_BTCA                     28
 #define FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_REACH                    9
 #define FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_INTV                     7
 #define FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_DELAY                    13
@@ -75,7 +75,7 @@
 #define FLASH_PTP_CLIENT_MODE_SERVER_STATS_LEN                          FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_STATE + \
                                                                         FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_SERVER + \
                                                                         FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_CLOCK + \
-                                                                        FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_BMCA + \
+                                                                        FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_BTCA + \
                                                                         FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_INTV + \
                                                                         FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_REACH + \
                                                                         FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_DELAY + \

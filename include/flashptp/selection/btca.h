@@ -1,21 +1,23 @@
 /*
- * @file bmca.h
+ * @file btca.h
  * @note Copyright 2023, Meinberg Funkuhren GmbH & Co. KG, All rights reserved.
  * @author Thomas Behn <thomas.behn@meinberg.de>
  *
- * This class implements the IEEE1588 best master clock algorithm as server selection
- * algorithm (@see Selection.h). Servers that shall be taken into consideration
- * by this algorithm need to request the FlashPTPServerStateDS in the Sync Request.
- * To enable it, set the appropriate config property "stateInterval" to the
- * interval (2^n) in which the client shall attach a request for the data set
- * to a Sync Request sequence. The algorithm will then select the configured amount
- * of servers (pick) with the best PTP quality parameters.
+ * This class implements the IEEE1588 best timeTransmitter clock algorithm as
+ * server selection algorithm (@see Selection.h). Servers that shall be taken
+ * into consideration by this algorithm need to request the FlashPTPServerStateDS
+ * in the Sync Request. To enable it, set the appropriate config property
+ * "stateInterval" to the interval (2^n) in which the client shall attach
+ * a request for the data set to a Sync Request sequence. The algorithm will
+ * then select the configured amount of servers (pick) with the best PTP
+ * quality parameters.
  *
- * At the moment, the BMCA quality parameters in flashptpd server mode can only
- * be specified via configuration. Therefore, the outcome of the BMCA selection
- * algorithm is kind of predefined and does not really make sense. If you are using
- * flashptpd on the server-side and automatic BMCA parameter detection still has not
- * been implemented, you should use standard deviation selection (@see stdDev.h), instead.
+ * At the moment, the BTCA quality parameters in flashptpd server mode can only
+ * be specified via configuration. Therefore, the outcome of the BTCA selection
+ * algorithm is kind of predefined and does not really make sense. If you are
+ * using flashptpd on the server-side and automatic BTCA parameter detection
+ * still has not been implemented, you should use standard deviation selection
+ * (@see stdDev.h), instead.
  *
  * =============================================================================
  *
@@ -41,17 +43,17 @@
  *
  */
 
-#ifndef INCLUDE_FLASHPTP_SELECTION_BMCA_H_
-#define INCLUDE_FLASHPTP_SELECTION_BMCA_H_
+#ifndef INCLUDE_FLASHPTP_SELECTION_BTCA_H_
+#define INCLUDE_FLASHPTP_SELECTION_BTCA_H_
 
 #include <flashptp/selection/selection.h>
 
 namespace flashptp {
 namespace selection {
 
-class BMCA : public Selection {
+class BTCA : public Selection {
 public:
-    inline BMCA() : Selection(SelectionType::bmca) { }
+    inline BTCA() : Selection(SelectionType::btca) { }
 
     /*
      * Static member that compares the provided server state data sets.
@@ -59,7 +61,7 @@ public:
      */
     static int compare(const FlashPTPServerStateDS &ds1, const FlashPTPServerStateDS &ds2);
 
-    // Select the configured amount of servers with the best BMCA (clock quality) parameters.
+    // Select the configured amount of servers with the best BTCA (clock quality) parameters.
     std::vector<client::Server*> select(const std::vector<client::Server*> servers,
             clockid_t clockID = CLOCK_REALTIME);
 };
@@ -67,4 +69,4 @@ public:
 }
 }
 
-#endif /* INCLUDE_FLASHPTP_SELECTION_BMCA_H_ */
+#endif /* INCLUDE_FLASHPTP_SELECTION_BTCA_H_ */

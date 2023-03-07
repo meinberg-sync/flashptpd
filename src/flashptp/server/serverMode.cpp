@@ -379,7 +379,7 @@ void ServerMode::processRequest(Request *req)
         }
     }
 
-    // If the BMCA comparison data set has been requested by the client, append it to the Response TLV.
+    // If the FlashPTPServerStateDS has been requested by the client, append it to the Response TLV.
     if (tlv.hdr->flags & FLASH_PTP_FLAG_SERVER_STATE_DS) {
         *tlv.serverStateDS = _serverStateDS;
         if (_serverStateDS.stepsRemoved == 0)

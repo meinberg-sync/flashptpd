@@ -85,7 +85,7 @@ add_library(
 	${FLASH_PTP_SRC_PATH}/flashptp/network/network.cpp
 	${FLASH_PTP_SRC_PATH}/flashptp/network/phc.cpp
 	${FLASH_PTP_SRC_PATH}/flashptp/network/socket.cpp
-	${FLASH_PTP_SRC_PATH}/flashptp/selection/bmca.cpp
+	${FLASH_PTP_SRC_PATH}/flashptp/selection/btca.cpp
 	${FLASH_PTP_SRC_PATH}/flashptp/selection/stdDev.cpp
 	${FLASH_PTP_SRC_PATH}/flashptp/selection/selection.cpp
 	${FLASH_PTP_SRC_PATH}/flashptp/server/listener.cpp

@@ -191,7 +191,7 @@ void ClientMode::printServers()
     ofs << std::setw(FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_STATE) << std::left << "";
     ofs << std::setw(FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_SERVER) << std::left << "server";
     ofs << std::setw(FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_CLOCK) << std::left << "clock";
-    ofs << std::setw(FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_BMCA) << std::left << "p1/cc/ca/cv/p2/sr";
+    ofs << std::setw(FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_BTCA) << std::left << "p1/cc/ca/cv/p2/sr";
     ofs << std::setw(FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_REACH) << std::left << "reach";
     ofs << std::setw(FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_INTV) << std::left << "intv";
     ofs << std::setw(FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_DELAY) << std::left << "delay";

@@ -67,8 +67,8 @@ enum class SelectionType
 {
     invalid,
     stdDev,
-    bmca,
-    max = bmca
+    btca,
+    max = btca
 };
 
 class Selection {

@@ -322,22 +322,22 @@ inline static uint64_t swap64(uint64_t netll)
 
 struct PTP2Flags
 {
-    uint8_t alternateMaster       : 1;
-    uint8_t twoStep               : 1;
-    uint8_t unicast               : 1;
-    uint8_t reserved1             : 1;
-    uint8_t reserved2             : 1;
-    uint8_t profileSpecific1      : 1;
-    uint8_t profileSpecific2      : 1;
-    uint8_t security              : 1;
-    uint8_t leapIndicator61       : 1;
-    uint8_t leapIndicator59       : 1;
-    uint8_t utcReasonable         : 1;
-    uint8_t timescale             : 1;
-    uint8_t timeTraceable         : 1;
-    uint8_t frequencyTraceable    : 1;
-    uint8_t reserved3             : 1;
-    uint8_t reserved4             : 1;
+    uint8_t alternateTimeTransmitter    : 1;
+    uint8_t twoStep                     : 1;
+    uint8_t unicast                     : 1;
+    uint8_t reserved1                   : 1;
+    uint8_t reserved2                   : 1;
+    uint8_t profileSpecific1            : 1;
+    uint8_t profileSpecific2            : 1;
+    uint8_t security                    : 1;
+    uint8_t leapIndicator61             : 1;
+    uint8_t leapIndicator59             : 1;
+    uint8_t utcReasonable               : 1;
+    uint8_t timescale                   : 1;
+    uint8_t timeTraceable               : 1;
+    uint8_t frequencyTraceable          : 1;
+    uint8_t reserved3                   : 1;
+    uint8_t reserved4                   : 1;
 
     inline PTP2Flags(bool ts = true)
     {
@@ -671,7 +671,7 @@ struct FlashPTPServerStateDS
         timeSource = ts;
     }
 
-    inline std::string toBMCAStr() const
+    inline std::string toBTCAStr() const
     {
         std::stringstream sstr;
         sstr << unsigned(gmPriority1);
