@@ -173,6 +173,11 @@ std::vector<client::Server*> Selection::preprocess(const std::vector<client::Ser
         if (s->state() < client::ServerState::ready || s->clockID() != clockID)
             continue;
 
+        if (s->noSelect()) {
+            s->setState(client::ServerState::falseticker);
+            continue;
+        }
+
         if (llabs(s->calculation()->delay()) > _delayThreshold) {
             if (s->state() != client::ServerState::falseticker) {
                 cppLog::debugf("Consider server %s as %s due to delay threshold exceedance (%s > %s)",
