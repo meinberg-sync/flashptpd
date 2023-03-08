@@ -63,6 +63,80 @@ SelectionType Selection::typeFromStr(const char *str)
     return SelectionType::invalid;
 }
 
+std::vector<client::Server*> Selection::selectTruechimers(const std::vector<client::Server*> &servers)
+{
+    std::vector<client::Server*> v;
+    bool intersection = true;
+    unsigned i;
+
+    if (servers.size() <= 2) {
+        // Now way to detect falsetickers and divide them from the truechimers
+        v = servers;
+        goto finish;
+    }
+
+    /*
+     * Check, if all servers use a calculation algorithm with a size of at least two sequences.
+     * If so, find the intersection interval and consider all servers that have points
+     * within that interval as truechimers (@see https://www.eecis.udel.edu/~mills/ntp/html/select.html)
+     */
+    for (i = 0; i < servers.size(); ++i) {
+        if (servers[i]->calculation()->size() < 2)
+            intersection = false;
+    }
+
+    intersection = false;
+    if (intersection) {
+        // find the intersection interval
+    }
+    else {
+        /*
+         * No way to find an intersection interval, because not all servers have two or more complete
+         * sequences in their calculation algorithm. Calculate the arithmetic mean and the standard deviation
+         * of the current servers offsets to find a group of truechimers.
+         *
+         * Consider all servers that have a calculated offset within the standard deviation range
+         * (mean offset +/- standard deviation of offsets) as truechimers.
+         */
+        double mean = 0, d = 0;
+        int64_t stdDev, min, max;
+
+        for (i = 0; i < servers.size(); ++i)
+            mean += servers[i]->calculation()->offset();
+        mean /= (int64_t)servers.size();
+
+        for (i = 0; i < servers.size(); ++i)
+            d += pow((double)servers[i]->calculation()->offset() - mean, 2);
+        d /= (double)(servers.size() - 1);
+
+        stdDev = sqrt(d);
+        d = 1;
+
+        while (v.size() == 0) {
+            // Start with the calculated standard deviation range, increase the size of the range
+            // until at least one of the servers is within the range
+            min = mean - ((double)stdDev * d);
+            if (min < 0)
+                min = 0;
+            max = mean + ((double)stdDev * d);
+
+            for (i = 0; i < servers.size(); ++i) {
+                if (servers[i]->calculation()->offset() >= min &&
+                    servers[i]->calculation()->offset() <= max)
+                    v.push_back(servers[i]);
+            }
+
+            if (v.size() == 0)
+                d += 0.1;
+        }
+    }
+
+finish:
+    for (auto *s: v)
+        s->setState(client::ServerState::candidate);
+    return v;
+}
+
 Selection *Selection::make(const Json &config)
 {
     Selection *sel = nullptr;
@@ -169,15 +243,18 @@ std::vector<client::Server*> Selection::preprocess(const std::vector<client::Ser
     std::vector<client::Server*> v;
     struct sockaddr_ll saddr_ll;
 
+    // Find all Servers in "Ready" state that use the desired clock (clockID)
     for (auto *s: servers) {
         if (s->state() < client::ServerState::ready || s->clockID() != clockID)
             continue;
 
+        // Skip servers with "noSelect" option
         if (s->noSelect()) {
             s->setState(client::ServerState::falseticker);
             continue;
         }
 
+        // Skip servers that have a calculated delay exceeding the configured delay threshold
         if (llabs(s->calculation()->delay()) > _delayThreshold) {
             if (s->state() != client::ServerState::falseticker) {
                 cppLog::debugf("Consider server %s as %s due to delay threshold exceedance (%s > %s)",
@@ -192,13 +269,17 @@ std::vector<client::Server*> Selection::preprocess(const std::vector<client::Ser
         s->setState(client::ServerState::ready);
         v.push_back(s);
     }
+
+    // Now find the truechimers from all "Ready" servers (setting their state to "Candidate")
+    v = Selection::selectTruechimers(v);
+
     return v;
 }
 
 void Selection::postprocess(const std::vector<client::Server*> &servers, clockid_t clockID)
 {
     for (auto *s: servers)
-        s->setState(clockID == CLOCK_REALTIME ? client::ServerState::syspeer : client::ServerState::used);
+        s->setState(client::ServerState::selected);
 }
 
 }
