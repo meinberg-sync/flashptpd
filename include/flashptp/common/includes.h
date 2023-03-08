@@ -67,4 +67,9 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#if __GLIBC__ == 2 && __GLIBC_MINOR__ < 30
+    #include <sys/syscall.h>
+    #define gettid() syscall(SYS_gettid)
+#endif
+
 #endif /* INCLUDE_FLASHPTP_COMMON_INCLUDES_H_ */
