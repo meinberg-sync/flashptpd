@@ -92,8 +92,8 @@ public:
     void setConfig(const Json &config);
 
     /*
-     * Pre-select servers from the provided vector that are at least in "ready" state
-     * and use the correct clock for calculation
+     * Pre-select servers from the provided vector that are at least in "ready" state,
+     * use the correct clock for calculation and are considered to be truechimers (@see selectTruechimers).
      */
     std::vector<client::Server*> preprocess(const std::vector<client::Server*> servers, clockid_t clockID);
     // Set the state of selected servers to "Selected"

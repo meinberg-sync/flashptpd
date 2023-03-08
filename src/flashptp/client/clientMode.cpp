@@ -226,6 +226,9 @@ void ClientMode::performAdjustments()
             continue;
 
         servers = _selection->select(_servers, _adjustments[i]->clockID());
+        if (servers.empty())
+            continue;
+
         if (_adjustments[i]->adjust(servers))
             _adjustments[i]->finalize(servers);
     }
