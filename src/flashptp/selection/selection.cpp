@@ -140,14 +140,9 @@ std::vector<client::Server*> Selection::selectTruechimers(const std::vector<clie
                 groups.emplace_back(min, max, srv);
         }
 
-        printf("groups.size(): %u\n", groups.size());
-
         // Determine the maximum group size and store the indices of the appropriate group(s)
         max = 0;
         for (i = 0; i < groups.size(); ++i) {
-            printf("groups[%u]._min: %lld\n", i, groups[i]._min);
-            printf("groups[%u]._max: %lld\n", i, groups[i]._max);
-            printf("groups[%u]._servers.size(): %u\n", i, groups[i]._servers.size());
             if (groups[i]._servers.size() > max) {
                 max = groups[i]._servers.size();
                 largest = { i };
