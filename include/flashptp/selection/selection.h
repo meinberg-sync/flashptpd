@@ -84,6 +84,8 @@ public:
     static const char *typeToLongStr(SelectionType t);
     static SelectionType typeFromStr(const char *str);
 
+    static std::vector<client::Server*> selectTruechimers(const std::vector<client::Server*> &servers);
+
     // Instantiate one of the implementations of the Selection class based on the provided config
     static Selection *make(const Json &config);
     static bool validateConfig(const Json &config, std::vector<std::string> *errs);
@@ -94,7 +96,7 @@ public:
      * and use the correct clock for calculation
      */
     std::vector<client::Server*> preprocess(const std::vector<client::Server*> servers, clockid_t clockID);
-    // Set the state of selected servers to "syspeer" (for CLOCK_REALTIME) or to "used" (for PHCs)
+    // Set the state of selected servers to "Selected"
     void postprocess(const std::vector<client::Server*> &servers, clockid_t clockID);
 
     // Pure virtual method to be implemented by deriving selection algorithm implementations.
