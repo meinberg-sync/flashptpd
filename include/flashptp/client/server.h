@@ -116,8 +116,8 @@ enum class ServerState
     collecting,
     ready,
     falseticker,
-    used,
-    syspeer
+    candidate,
+    selected
 };
 
 class Server : public Thread {
