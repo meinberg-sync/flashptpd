@@ -201,6 +201,22 @@ bool Selection::validateConfig(const Json &config, std::vector<std::string> *err
         }
     }
 
+    it = config.find(FLASH_PTP_JSON_CFG_SELECTION_INTERSECTION_PADDING);
+    if (it != config.end() && !it->is_number_unsigned()) {
+        errs->push_back(std::string("Type of property \"" FLASH_PTP_JSON_CFG_SELECTION_INTERSECTION_PADDING "\" " \
+                "within \"" FLASH_PTP_JSON_CFG_CLIENT_MODE_SELECTION "\" must be \"") +
+                Json((unsigned)1).type_name() + "\".");
+        valid = false;
+    }
+
+    it = config.find(FLASH_PTP_JSON_CFG_SELECTION_MAX_OFFSET_DIFFERENCE);
+    if (it != config.end() && !it->is_number_unsigned()) {
+        errs->push_back(std::string("Type of property \"" FLASH_PTP_JSON_CFG_SELECTION_MAX_OFFSET_DIFFERENCE "\" " \
+                "within \"" FLASH_PTP_JSON_CFG_CLIENT_MODE_SELECTION "\" must be \"") +
+                Json((unsigned)1).type_name() + "\".");
+        valid = false;
+    }
+
     return valid;
 }
 
@@ -219,6 +235,18 @@ void Selection::setConfig(const Json &config)
         it->get_to(_delayThreshold);
     else
         _delayThreshold = FLASH_PTP_DEFAULT_SELECTION_DELAY_THRESHOLD;
+
+    it = config.find(FLASH_PTP_JSON_CFG_SELECTION_INTERSECTION_PADDING);
+    if (it != config.end())
+        it->get_to(_intersectionPadding);
+    else
+        _intersectionPadding = 0;
+
+    it = config.find(FLASH_PTP_JSON_CFG_SELECTION_MAX_OFFSET_DIFFERENCE);
+    if (it != config.end())
+        it->get_to(_maxOffsetDifference);
+    else
+        _maxOffsetDifference = 0;
 }
 
 std::vector<client::Server*> Selection::detectTruechimers(const std::vector<client::Server*> &servers,
