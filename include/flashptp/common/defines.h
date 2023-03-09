@@ -183,56 +183,58 @@ inline PTPTimestampLevel ptpTimestampLevelFromShortStr(const char *str)
     return PTPTimestampLevel::invalid;
 }
 
-#define FLASH_PTP_UDP_EVENT_PORT                        319
-#define FLASH_PTP_UDP_GENERAL_PORT                      320
+#define FLASH_PTP_UDP_EVENT_PORT                                319
+#define FLASH_PTP_UDP_GENERAL_PORT                              320
 
-#define FLASH_PTP_SYSTEM_CLOCK_NAME                     "system"
+#define FLASH_PTP_SYSTEM_CLOCK_NAME                             "system"
 
-#define FLASH_PTP_FIXED_VERSION                         PTPVersion::v2_1
-#define FLASH_PTP_FIXED_SDO_ID                          0x000
-#define FLASH_PTP_FIXED_DOMAIN_NUMBER                   0
+#define FLASH_PTP_FIXED_VERSION                                 PTPVersion::v2_1
+#define FLASH_PTP_FIXED_SDO_ID                                  0x000
+#define FLASH_PTP_FIXED_DOMAIN_NUMBER                           0
 
-#define FLASH_PTP_DEFAULT_INTERVAL                      0
-#define FLASH_PTP_DEFAULT_STATE_INTERVAL                0x7f
+#define FLASH_PTP_DEFAULT_INTERVAL                              0
+#define FLASH_PTP_DEFAULT_STATE_INTERVAL                        0x7f
 
-#define FLASH_PTP_DEFAULT_FILTER_SIZE                   16
-#define FLASH_PTP_DEFAULT_FILTER_PICK                   1
+#define FLASH_PTP_DEFAULT_FILTER_SIZE                           16
+#define FLASH_PTP_DEFAULT_FILTER_PICK                           1
 
-#define FLASH_PTP_DEFAULT_CALCULATION_SIZE              8
+#define FLASH_PTP_DEFAULT_CALCULATION_SIZE                      8
 
-#define FLASH_PTP_DEFAULT_SELECTION_PICK                1
-#define FLASH_PTP_DEFAULT_SELECTION_DELAY_THRESHOLD     1500000000ULL  // 1.5s
+#define FLASH_PTP_DEFAULT_SELECTION_PICK                        1
+#define FLASH_PTP_DEFAULT_SELECTION_DELAY_THRESHOLD             1500000000ULL   // 1.5 s
+#define FLASH_PTP_DEFAULT_SELECTION_INTERSECTION_PADDING_SW     1000000ULL      // 1 ms
+#define FLASH_PTP_DEFAULT_SELECTION_INTERSECTION_PADDING_HW     1000ULL         // 1 us
 
-#define FLASH_PTP_DEFAULT_UTC_OFFSET                    37
-#define FLASH_PTP_DEFAULT_PRIORITY_1                    128
-#define FLASH_PTP_DEFAULT_CLOCK_CLASS                   248
-#define FLASH_PTP_DEFAULT_CLOCK_ACCURACY                0x2f
-#define FLASH_PTP_DEFAULT_CLOCK_VARIANCE                65535
-#define FLASH_PTP_DEFAULT_PRIORITY_2                    128
-#define FLASH_PTP_DEFAULT_STEPS_REMOVED                 0
-#define FLASH_PTP_DEFAULT_TIME_SOURCE                   0x60
+#define FLASH_PTP_DEFAULT_UTC_OFFSET                            37
+#define FLASH_PTP_DEFAULT_PRIORITY_1                            128
+#define FLASH_PTP_DEFAULT_CLOCK_CLASS                           248
+#define FLASH_PTP_DEFAULT_CLOCK_ACCURACY                        0x2f
+#define FLASH_PTP_DEFAULT_CLOCK_VARIANCE                        65535
+#define FLASH_PTP_DEFAULT_PRIORITY_2                            128
+#define FLASH_PTP_DEFAULT_STEPS_REMOVED                         0
+#define FLASH_PTP_DEFAULT_TIME_SOURCE                           0x60
 
-#define FLASH_PTP_DEFAULT_TIMEOUT_MS                    2000
+#define FLASH_PTP_DEFAULT_TIMEOUT_MS                            2000
 
-#define FLASH_PTP_ORG_EXT_TLV                           3
+#define FLASH_PTP_ORG_EXT_TLV                                   3
 
-#define FLASH_PTP_MEINBERG_ORG_ID_0                     0xEC
-#define FLASH_PTP_MEINBERG_ORG_ID_1                     0x46
-#define FLASH_PTP_MEINBERG_ORG_ID_2                     0x70
+#define FLASH_PTP_MEINBERG_ORG_ID_0                             0xEC
+#define FLASH_PTP_MEINBERG_ORG_ID_1                             0x46
+#define FLASH_PTP_MEINBERG_ORG_ID_2                             0x70
 
-#define FLASH_PTP_REQUEST_SUB_TYPE_0                    0x52  // R
-#define FLASH_PTP_REQUEST_SUB_TYPE_1                    0x65  // e
-#define FLASH_PTP_REQUEST_SUB_TYPE_2                    0x71  // q
+#define FLASH_PTP_REQUEST_SUB_TYPE_0                            0x52  // R
+#define FLASH_PTP_REQUEST_SUB_TYPE_1                            0x65  // e
+#define FLASH_PTP_REQUEST_SUB_TYPE_2                            0x71  // q
 
-#define FLASH_PTP_RESPONSE_SUB_TYPE_0                   0x52  // R
-#define FLASH_PTP_RESPONSE_SUB_TYPE_1                   0x65  // e
-#define FLASH_PTP_RESPONSE_SUB_TYPE_2                   0x73  // s
+#define FLASH_PTP_RESPONSE_SUB_TYPE_0                           0x52  // R
+#define FLASH_PTP_RESPONSE_SUB_TYPE_1                           0x65  // e
+#define FLASH_PTP_RESPONSE_SUB_TYPE_2                           0x73  // s
 
 // Flags used with FlashPTPTLVHdr::flags
-#define FLASH_PTP_FLAG_SERVER_STATE_DS                  0x1
+#define FLASH_PTP_FLAG_SERVER_STATE_DS                          0x1
 
 // Error Codes used with FlashPTPRespTLV::error
-#define FLASH_PTP_ERROR_OP_MODE_NOT_SUPP                0x0001
+#define FLASH_PTP_ERROR_OP_MODE_NOT_SUPP                        0x0001
 
 inline static const char *flashPTPMessageTypeToStr(uint8_t *orgSubType)
 {
