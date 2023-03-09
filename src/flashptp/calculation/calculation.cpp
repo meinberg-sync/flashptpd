@@ -231,6 +231,28 @@ double Calculation::sampleRate() const
         return 0;
 }
 
+int64_t Calculation::minOffset() const
+{
+    int64_t min = INT64_MAX;
+    std::shared_lock sl(_mutex);
+    for (auto *seq: _sequences) {
+        if (seq->offset() < min)
+            min = seq->offset();
+    }
+    return min;
+}
+
+int64_t Calculation::maxOffset() const
+{
+    int64_t max = INT64_MIN;
+    std::shared_lock sl(_mutex);
+    for (auto *seq: _sequences) {
+        if (seq->offset() > max)
+            max = seq->offset();
+    }
+    return max;
+}
+
 void Calculation::reset()
 {
     std::unique_lock ul(_mutex);

@@ -64,8 +64,8 @@ const char *Server::stateToStr(ServerState s)
     case ServerState::unreachable: return "!";
     case ServerState::collecting: return "^";
     case ServerState::falseticker: return "-";
-    case ServerState::used: return "+";
-    case ServerState::syspeer: return "*";
+    case ServerState::candidate: return "+";
+    case ServerState::selected: return "*";
     default: return " ";
     }
 }
@@ -78,8 +78,8 @@ const char *Server::stateToLongStr(ServerState s)
     case ServerState::collecting: return "Collecting";
     case ServerState::ready: return "Ready";
     case ServerState::falseticker: return "Falseticker";
-    case ServerState::used: return "Used";
-    case ServerState::syspeer: return "System Peer";
+    case ServerState::candidate: return "Candidate";
+    case ServerState::selected: return "Selected";
     default: return "Unknown";
     }
 }

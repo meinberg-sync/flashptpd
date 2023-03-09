@@ -65,6 +65,9 @@ std::vector<client::Server*> BTCA::select(const std::vector<client::Server*> ser
     unsigned i, j;
 
     p = preprocess(servers, clockID);
+    if (p.empty())
+        return p;
+
     while (r.size() < _pick) {
         for (i = 0, j = p.size(); i < p.size(); ++i) {
             if (!p[i]->serverStateDSValid())

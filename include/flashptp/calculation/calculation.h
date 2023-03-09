@@ -116,8 +116,13 @@ public:
     inline int64_t offset() const { std::shared_lock sl(_mutex); return _offset - _compensationValue; }
     inline double drift() const { std::shared_lock sl(_mutex); return _drift; }
 
+    // Get the minimum calculated offset within the current measurement window
+    int64_t minOffset() const;
+    // Get the maximum calculated offset within the current measurement window
+    int64_t maxOffset() const;
+
     // Indicates, whether a new adjustment is to be applied with the calculated offset and drift
-    bool hasAdjustment() const { std::shared_lock sl(_mutex); return _valid && _adjustment; }
+    inline bool hasAdjustment() const { std::shared_lock sl(_mutex); return _valid && _adjustment; }
     inline void setAdjustment(bool adjustment) { std::unique_lock sl(_mutex); _adjustment = adjustment; }
 
     inline PTPTimestampLevel timestampLevel() const { std::shared_lock sl(_mutex); return _timestampLevel; }
