@@ -38,6 +38,7 @@ namespace selection {
 struct IntersectionGroup {
     std::vector<client::Server*> _servers;
     int64_t _padsize{ 0 };
+    int64_t _maxOffsetDifference{ 0 };
 
     int64_t _cumulatedMin{ 0 };
     int64_t _cumulatedMax{ 0 };
@@ -47,16 +48,18 @@ struct IntersectionGroup {
     int64_t _max{ 0 };
     int64_t _offset{ 0 };
 
-    inline IntersectionGroup(client::Server *srv, int64_t padsize = 0,
+    inline IntersectionGroup(client::Server *srv, int64_t padsize = 0, int64_t maxOffsetDifference = 0,
             int64_t min = INT64_MIN, int64_t max = INT64_MAX)
     {
         _padsize = padsize;
+        _maxOffsetDifference = maxOffsetDifference;
         addServer(srv, min, max);
     }
 
     inline bool contains(int64_t min, int64_t max, int64_t offset) const
     {
-        if (llabs(_offset - offset) > _padsize)
+        if (_maxOffsetDifference > 0 &&
+            llabs(_offset - offset) > _maxOffsetDifference)
             return false;
         else
             return min < _max && max > _min;
@@ -80,7 +83,7 @@ struct IntersectionGroup {
 
     inline void pad()
     {
-        if ((_max - _min) >= _padsize)
+        if (llabs(_max - _min) >= _padsize)
             return;
 
         int64_t mean = (_max + _min) / 2;
@@ -227,7 +230,7 @@ std::vector<client::Server*> Selection::detectTruechimers(const std::vector<clie
     struct IntersectionGroup *grp;
     client::Server *srv;
 
-    int64_t min, max, next, lli, padsize;
+    int64_t min, max, next, lli, padsize, mod;
     unsigned i, j, k;
     bool create;
 
@@ -244,8 +247,8 @@ std::vector<client::Server*> Selection::detectTruechimers(const std::vector<clie
      * The intersection interval is defined as the
      *     "smallest interval containing points from the largest number of correctness intervals"
      *
-     * The correctness interval is defined as the interval between the minimum and maximum measured offsets
-     * within the current measurement window.
+     * The correctness interval is defined as the difference between the minimum and maximum
+     * measured offsets within the current measurement window.
      *
      * For very good connections, the intersection interval can be quite small. To avoid permanent
      * rebuilding of groups (leading to clock hopping), the size of the intersection interval is padded
@@ -266,6 +269,19 @@ std::vector<client::Server*> Selection::detectTruechimers(const std::vector<clie
         padsize = _intersectionPadding;
 
     /*
+     * Do not group servers, that have a difference greater than the (configurable) _maxOffsetDifference
+     * in their measured offsets (@see IntersectionGroup::contains).
+     */
+    if (_maxOffsetDifference == 0) {
+        if (clockID == CLOCK_REALTIME)
+            mod = FLASH_PTP_DEFAULT_SELECTION_MAX_OFFSET_DIFFERENCE_SW;
+        else
+            mod = FLASH_PTP_DEFAULT_SELECTION_MAX_OFFSET_DIFFERENCE_HW;
+    }
+    else
+        mod = _maxOffsetDifference;
+
+    /*
      * Find groups of servers sharing measurement points within their correctness intervals.
      * Servers can be a member of multiple groups.
      */
@@ -284,7 +300,7 @@ std::vector<client::Server*> Selection::detectTruechimers(const std::vector<clie
         }
 
         if (create)
-            groups.emplace_back(srv, padsize, min, max);
+            groups.emplace_back(srv, padsize, mod, min, max);
     }
 
     // Determine the maximum group size and store the indices of the appropriate group(s)
@@ -303,10 +319,10 @@ std::vector<client::Server*> Selection::detectTruechimers(const std::vector<clie
 
     /*
      * If there is only one group left, consider that group as the truechimers.
-     * Otherwise, find the group with the smallest correctness interval.
+     * Otherwise, find the group with the smallest intersection interval.
      *
-     * To avoid clock (group) hopping, check if the difference between the correctness intervals
-     * is bigger than the configured correctness padding value.
+     * To avoid clock (group) hopping, check if the difference between the intersection intervals
+     * is bigger than the configured intersection padding value.
      */
     if (bestGroups.size() == 1) {
         truechimers = grp->_servers;
@@ -319,7 +335,7 @@ std::vector<client::Server*> Selection::detectTruechimers(const std::vector<clie
         next = grp->_max - grp->_min;
         lli = llabs(next - min);
         if (lli > padsize) {
-            // Difference between the correctness intervals is big enough to be considered
+            // Difference between the intersection intervals is big enough to be considered
             if (next < min) {
                 bestGroups.erase(bestGroups.begin() + j);
                 j = --i;
@@ -338,7 +354,7 @@ std::vector<client::Server*> Selection::detectTruechimers(const std::vector<clie
      * Otherwise, find the group with the smallest mean standard deviation.
      *
      * To avoid clock (group) hopping, check if the difference between the mean standard deviation values
-     * is bigger than the configured correctness padding value.
+     * is bigger than the configured intersection padding value.
      */
     if (bestGroups.size() == 1) {
         truechimers = grp->_servers;
@@ -377,7 +393,7 @@ std::vector<client::Server*> Selection::detectTruechimers(const std::vector<clie
      * Otherwise, find the group with the smallest mean path delay.
      *
      * To avoid clock (group) hopping, check if the difference between the mean path delay values
-     * is bigger than the configured correctness padding value.
+     * is bigger than the configured intersection padding value.
      */
     if (bestGroups.size() == 1) {
         truechimers = grp->_servers;

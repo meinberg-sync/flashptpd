@@ -49,10 +49,11 @@
 
 #include <flashptp/common/defines.h>
 
-#define FLASH_PTP_JSON_CFG_SELECTION_TYPE                           "type"
-#define FLASH_PTP_JSON_CFG_SELECTION_PICK                           "pick"
-#define FLASH_PTP_JSON_CFG_SELECTION_DELAY_THRESHOLD                "delayThreshold"
-#define FLASH_PTP_JSON_CFG_SELECTION_INTERSECTION_PADDING           "intersectionPadding"
+#define FLASH_PTP_JSON_CFG_SELECTION_TYPE                                   "type"
+#define FLASH_PTP_JSON_CFG_SELECTION_PICK                                   "pick"
+#define FLASH_PTP_JSON_CFG_SELECTION_DELAY_THRESHOLD                        "delayThreshold"
+#define FLASH_PTP_JSON_CFG_SELECTION_INTERSECTION_PADDING                   "intersectionPadding"
+#define FLASH_PTP_JSON_CFG_SELECTION_MAX_OFFSET_DIFFERENCE                  "maxOffsetDifference"
 
 namespace flashptp {
 
@@ -110,8 +111,9 @@ protected:
 
     SelectionType _type{ SelectionType::invalid };
     unsigned _pick{ FLASH_PTP_DEFAULT_SELECTION_PICK };
-    uint64_t _delayThreshold{ FLASH_PTP_DEFAULT_SELECTION_DELAY_THRESHOLD };
-    uint64_t _intersectionPadding{ 0 };
+    int64_t _delayThreshold{ FLASH_PTP_DEFAULT_SELECTION_DELAY_THRESHOLD };
+    int64_t _intersectionPadding{ 0 };
+    int64_t _maxOffsetDifference{ 0 };
 
 private:
     /*
