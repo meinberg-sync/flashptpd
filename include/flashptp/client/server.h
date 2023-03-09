@@ -61,6 +61,7 @@
 
 #define FLASH_PTP_CLIENT_MODE_SERVER                                    "Server"
 
+#define FLASH_PTP_CLIENT_MODE_SERVER_ERROR_LIMIT                        3
 #define FLASH_PTP_CLIENT_MODE_SERVER_OFFSET_HISTORY_SIZE                16
 
 #define FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_STATE                    2
@@ -113,6 +114,7 @@ enum class ServerState
 {
     initializing = 0,
     unreachable,
+    faulty,
     collecting,
     ready,
     falseticker,
@@ -193,7 +195,15 @@ private:
      * algorithm. Update the standard deviation and the server state, if required.
      */
     void onSequenceTimeout(Sequence *seq);
-
+    /*
+     * Increase reach value (shift left by one, set LSB to 1).
+     *
+     * If state is "Faulty" already, do nothing.
+     * If _errorCount is smaller than FLASH_PTP_CLIENT_MODE_SERVER_ERROR_LIMIT, increment it and return.
+     * If _errorCount is bigger than or equal to FLASH_PTP_CLIENT_MODE_SERVER_ERROR_LIMIT,
+     * clear all filters, calculations and standard deviation and set state to "Faulty".
+     */
+    void onSequenceError(Sequence *seq);
     void resetState();
 
     inline void setClock(const std::string &name, clockid_t id)
@@ -231,6 +241,7 @@ private:
 
     ServerState _state{ ServerState::initializing };
     uint16_t _reach{ 0 };
+    uint16_t _errorCount{ 0 };
 
     bool _serverStateDSValid{ false };
     FlashPTPServerStateDS _serverStateDS;
