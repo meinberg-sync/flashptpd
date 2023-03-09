@@ -727,7 +727,7 @@ void Server::onSequenceError(Sequence *seq)
             filt->clear();
     }
 
-    _calculation->clear();
+    _calculation->reset();
 
     for (unsigned i = 0; i < FLASH_PTP_CLIENT_MODE_SERVER_OFFSET_HISTORY_SIZE; ++i)
         _stdDevHistory[i] = INT64_MAX;
