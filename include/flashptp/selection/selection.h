@@ -13,8 +13,12 @@
  * configured (pick). If more than one server is being selected, the adjustment
  * algorithm averages the measured offset and drift values.
  *
- * A server is considered as "falseticker" and will not be selected, if the
- * configured delay threshold (default: 1.5 seconds) is exceeded.
+ * A server is considered as "falseticker" and will not be selected, if one of
+ * the following checks is true:
+ *      - "noSelect" option is true for the server
+ *      - the configured delay threshold (default: 1.5 seconds) is exceeded
+ *      - the server does not have measurement points within the calculated
+ *        intersection interval (@see detectTruechimers)
  *
  * =============================================================================
  *
@@ -48,6 +52,7 @@
 #define FLASH_PTP_JSON_CFG_SELECTION_TYPE                           "type"
 #define FLASH_PTP_JSON_CFG_SELECTION_PICK                           "pick"
 #define FLASH_PTP_JSON_CFG_SELECTION_DELAY_THRESHOLD                "delayThreshold"
+#define FLASH_PTP_JSON_CFG_SELECTION_INTERSECTION_PADDING           "intersectionPadding"
 
 namespace flashptp {
 
@@ -84,29 +89,36 @@ public:
     static const char *typeToLongStr(SelectionType t);
     static SelectionType typeFromStr(const char *str);
 
-    static std::vector<client::Server*> selectTruechimers(const std::vector<client::Server*> &servers);
-
     // Instantiate one of the implementations of the Selection class based on the provided config
     static Selection *make(const Json &config);
     static bool validateConfig(const Json &config, std::vector<std::string> *errs);
     void setConfig(const Json &config);
-
-    /*
-     * Pre-select servers from the provided vector that are at least in "ready" state,
-     * use the correct clock for calculation and are considered to be truechimers (@see selectTruechimers).
-     */
-    std::vector<client::Server*> preprocess(const std::vector<client::Server*> servers, clockid_t clockID);
-    // Set the state of selected servers to "Selected"
-    void postprocess(const std::vector<client::Server*> &servers, clockid_t clockID);
 
     // Pure virtual method to be implemented by deriving selection algorithm implementations.
     virtual std::vector<client::Server*> select(const std::vector<client::Server*> servers,
             clockid_t clockID = CLOCK_REALTIME) = 0;
 
 protected:
+    /*
+     * Pre-select servers from the provided vector that are at least in "ready" state,
+     * use the correct clock for calculation and are considered to be truechimers (@see detectTruechimers).
+     */
+    std::vector<client::Server*> preprocess(const std::vector<client::Server*> &servers, clockid_t clockID);
+
+    // Set the state of selected servers to "Selected"
+    void postprocess(const std::vector<client::Server*> &servers, clockid_t clockID);
+
     SelectionType _type{ SelectionType::invalid };
     unsigned _pick{ FLASH_PTP_DEFAULT_SELECTION_PICK };
     uint64_t _delayThreshold{ FLASH_PTP_DEFAULT_SELECTION_DELAY_THRESHOLD };
+    uint64_t _intersectionPadding{ 0 };
+
+private:
+    /*
+     * Try to differ between truechimers and falsetickers. If possible, calculate the intersection
+     * interval and consider all servers that have points within that interval as truechimers.
+     */
+    std::vector<client::Server*> detectTruechimers(const std::vector<client::Server*> &servers, clockid_t clockID);
 };
 
 }

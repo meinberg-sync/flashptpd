@@ -35,16 +35,57 @@
 namespace flashptp {
 namespace selection {
 
-struct CorrectnessGroup {
+struct IntersectionGroup {
+    std::vector<client::Server*> _servers;
+    int64_t _padsize{ 0 };
+
+    int64_t _cumulatedMin{ 0 };
+    int64_t _cumulatedMax{ 0 };
+    int64_t _cumulatedOffset{ 0 };
+
     int64_t _min{ 0 };
     int64_t _max{ 0 };
-    std::vector<client::Server*> _servers;
+    int64_t _offset{ 0 };
 
-    inline CorrectnessGroup(int64_t min, int64_t max, client::Server *server)
+    inline IntersectionGroup(client::Server *srv, int64_t padsize = 0,
+            int64_t min = INT64_MIN, int64_t max = INT64_MAX)
     {
-        _min = min;
-        _max = max;
-        _servers.push_back(server);
+        _padsize = padsize;
+        addServer(srv, min, max);
+    }
+
+    inline bool contains(int64_t min, int64_t max, int64_t offset) const
+    {
+        if (llabs(_offset - offset) > _padsize)
+            return false;
+        else
+            return min < _max && max > _min;
+    }
+
+    inline void addServer(client::Server *srv, int64_t min = INT64_MIN, int64_t max = INT64_MAX)
+    {
+        _servers.push_back(srv);
+        if (min == INT64_MIN)
+            min = srv->calculation()->minOffset();
+        if (max == INT64_MAX)
+            max = srv->calculation()->maxOffset();
+        _cumulatedMin += min;
+        _cumulatedMax += max;
+        _cumulatedOffset += srv->calculation()->offset();
+        _min = _cumulatedMin / (int64_t)_servers.size();
+        _max = _cumulatedMax / (int64_t)_servers.size();
+        _offset = _cumulatedOffset / (int64_t)_servers.size();
+        pad();
+    }
+
+    inline void pad()
+    {
+        if ((_max - _min) >= _padsize)
+            return;
+
+        int64_t mean = (_max + _min) / 2;
+        _min = mean - (_padsize / 2);
+        _max = mean + (_padsize / 2);
     }
 };
 
@@ -74,149 +115,6 @@ SelectionType Selection::typeFromStr(const char *str)
             return (SelectionType)i;
     }
     return SelectionType::invalid;
-}
-
-std::vector<client::Server*> Selection::selectTruechimers(const std::vector<client::Server*> &servers)
-{
-    std::vector<client::Server*> v;
-    bool intersection = true;
-    int64_t min, max;
-    unsigned i;
-
-    if (servers.size() <= 2) {
-        // Now way to differ between falsetickers and truechimers
-        v = servers;
-        goto finish;
-    }
-
-    /*
-     * Check, if all servers use a calculation algorithm with a size of at least two sequences.
-     * If so, find the intersection interval and consider all servers that have points
-     * within that interval as truechimers (@see https://www.eecis.udel.edu/~mills/ntp/html/select.html).
-     *
-     * The intersection interval is defined as the
-     *     "smallest interval containing points from the largest number of correctness intervals"
-     */
-    for (i = 0; i < servers.size(); ++i) {
-        if (servers[i]->calculation()->size() < 2)
-            intersection = false;
-    }
-
-    if (intersection) {
-        // Find the intersection interval
-        std::vector<struct CorrectnessGroup> groups;
-        struct CorrectnessGroup *grp;
-        std::vector<unsigned> largest;
-        client::Server *srv;
-        int64_t next;
-        bool create;
-        unsigned j;
-
-        /*
-         * Find groups of servers sharing measurement points within their correctness
-         * intervals (min and max offsets). Servers can be a member of multiple groups.
-         */
-        for (i = 0; i < servers.size(); ++i) {
-            create = true;
-            srv = servers[i];
-            min = srv->calculation()->minOffset();
-            max = srv->calculation()->maxOffset();
-
-            for (j = 0; j < groups.size(); ++j) {
-                grp = &groups[j];
-                if (max < grp->_min || min > grp->_max)
-                    continue;
-
-                if (min > grp->_min)
-                    grp->_min = min;
-                if (max < grp->_max)
-                    grp->_max = max;
-                grp->_servers.push_back(srv);
-
-                create = false;
-            }
-
-            if (create)
-                groups.emplace_back(min, max, srv);
-        }
-
-        // Determine the maximum group size and store the indices of the appropriate group(s)
-        max = 0;
-        for (i = 0; i < groups.size(); ++i) {
-            if (groups[i]._servers.size() > max) {
-                max = groups[i]._servers.size();
-                largest = { i };
-            }
-            else if (groups[i]._servers.size() == max)
-                largest.push_back(i);
-        }
-
-        /*
-         * If there is exactly one largest group, consider that group as the truechimers.
-         * Otherwise, find the group with the smallest correctness interval.
-         */
-        if (largest.size() == 1)
-            v = groups[largest[0]]._servers;
-        else {
-            min = groups[largest[0]]._max - groups[largest[0]]._min;
-            for (i = 1, j = 0; i < largest.size(); ++i) {
-                next = groups[largest[i]]._max - groups[largest[i]]._min;
-                if (next < min) {
-                    min = next;
-                    j = i;
-                }
-            }
-            v = groups[largest[j]]._servers;
-        }
-    }
-    else {
-        /*
-         * No way to find an intersection interval, because not all servers have two or more complete
-         * sequences in their calculation algorithm. Calculate the arithmetic mean and the standard deviation
-         * of the current servers offsets to find a group of truechimers.
-         *
-         * Consider all servers that have a calculated offset within the standard deviation range
-         * (mean offset +/- standard deviation of offsets) as truechimers.
-         */
-        double mean = 0, d = 0;
-        int64_t stdDev;
-
-        for (i = 0; i < servers.size(); ++i)
-            mean += servers[i]->calculation()->offset();
-        mean /= (int64_t)servers.size();
-
-        for (i = 0; i < servers.size(); ++i)
-            d += pow((double)servers[i]->calculation()->offset() - mean, 2);
-        d /= (double)(servers.size() - 1);
-
-        stdDev = sqrt(d);
-        d = 1;
-
-        while (v.size() == 0) {
-            /*
-             * Start with the calculated standard deviation range, increase the size of the range
-             * until at least one of the servers is within the range
-             */
-            min = mean - ((double)stdDev * d);
-            if (min < 0)
-                min = 0;
-            max = mean + ((double)stdDev * d);
-
-            for (i = 0; i < servers.size(); ++i) {
-                if (servers[i]->calculation()->offset() >= min &&
-                    servers[i]->calculation()->offset() <= max)
-                    v.push_back(servers[i]);
-            }
-
-            if (v.size() == 0)
-                d += 0.1;
-        }
-    }
-
-finish:
-    for (auto *s: v)
-        s->setState(client::ServerState::candidate);
-    return v;
 }
 
 Selection *Selection::make(const Json &config)
@@ -320,7 +218,216 @@ void Selection::setConfig(const Json &config)
         _delayThreshold = FLASH_PTP_DEFAULT_SELECTION_DELAY_THRESHOLD;
 }
 
-std::vector<client::Server*> Selection::preprocess(const std::vector<client::Server*> servers, clockid_t clockID)
+std::vector<client::Server*> Selection::detectTruechimers(const std::vector<client::Server*> &servers,
+        clockid_t clockID)
+{
+    std::vector<struct IntersectionGroup> groups;
+    std::vector<client::Server*> truechimers;
+    std::vector<unsigned> bestGroups;
+    struct IntersectionGroup *grp;
+    client::Server *srv;
+
+    int64_t min, max, next, lli, padsize;
+    unsigned i, j, k;
+    bool create;
+
+    if (servers.size() <= 2) {
+        // Now way to differ between falsetickers and truechimers
+        truechimers = servers;
+        goto finish;
+    }
+
+    /*
+     * Find the intersection interval and consider all servers that have points within that
+     * interval as truechimers (@see https://www.eecis.udel.edu/~mills/ntp/html/select.html).
+     *
+     * The intersection interval is defined as the
+     *     "smallest interval containing points from the largest number of correctness intervals"
+     *
+     * The correctness interval is defined as the interval between the minimum and maximum measured offsets
+     * within the current measurement window.
+     *
+     * For very good connections, the intersection interval can be quite small. To avoid permanent
+     * rebuilding of groups (leading to clock hopping), the size of the intersection interval is padded
+     * to the (configurable) value of _intersectionPadding.
+     *
+     * While the NTP documentation linked above gives a good idea on how the intersection interval
+     * detection basically works, we do it slightly different here. The intersection interval of a
+     * group of possible truechimers is calculated as the (possibly padded) mean minimum and maximum
+     * correctness values of all servers that belong to that group.
+     */
+    if (_intersectionPadding == 0) {
+        if (clockID == CLOCK_REALTIME)
+            padsize = FLASH_PTP_DEFAULT_SELECTION_INTERSECTION_PADDING_SW;
+        else
+            padsize = FLASH_PTP_DEFAULT_SELECTION_INTERSECTION_PADDING_HW;
+    }
+    else
+        padsize = _intersectionPadding;
+
+    /*
+     * Find groups of servers sharing measurement points within their correctness intervals.
+     * Servers can be a member of multiple groups.
+     */
+    for (i = 0; i < servers.size(); ++i) {
+        create = true;
+        srv = servers[i];
+        min = srv->calculation()->minOffset();
+        max = srv->calculation()->maxOffset();
+
+        for (j = 0; j < groups.size(); ++j) {
+            grp = &groups[j];
+            if (grp->contains(min, max, srv->calculation()->offset())) {
+                grp->addServer(srv, min, max);
+                create = false;
+            }
+        }
+
+        if (create)
+            groups.emplace_back(srv, padsize, min, max);
+    }
+
+    // Determine the maximum group size and store the indices of the appropriate group(s)
+    max = 0;
+    for (i = 0; i < groups.size(); ++i) {
+        grp = &groups[i];
+        if (grp->_servers.size() > max) {
+            max = grp->_servers.size();
+            bestGroups = { i };
+        }
+        else if (grp->_servers.size() == max)
+            bestGroups.push_back(i);
+    }
+
+    grp = &groups[bestGroups.front()];
+
+    /*
+     * If there is only one group left, consider that group as the truechimers.
+     * Otherwise, find the group with the smallest correctness interval.
+     *
+     * To avoid clock (group) hopping, check if the difference between the correctness intervals
+     * is bigger than the configured correctness padding value.
+     */
+    if (bestGroups.size() == 1) {
+        truechimers = grp->_servers;
+        goto finish;
+    }
+
+    min = grp->_max - grp->_min;
+    for (i = 1, j = 0; i < bestGroups.size(); ++i) {
+        grp = &groups[bestGroups[i]];
+        next = grp->_max - grp->_min;
+        lli = llabs(next - min);
+        printf("lli[%u]: %ld\n", i, lli);
+        if (lli > padsize) {
+            // Difference between the correctness intervals is big enough to be considered
+            if (next < min) {
+                bestGroups.erase(bestGroups.begin() + j);
+                j = --i;
+            }
+            else {
+                bestGroups.erase(bestGroups.begin() + i);
+                --i;
+            }
+        }
+    }
+
+    grp = &groups[bestGroups.front()];
+
+    /*
+     * If there is only one group left, consider that group as the truechimers.
+     * Otherwise, find the group with the smallest mean standard deviation.
+     *
+     * To avoid clock (group) hopping, check if the difference between the mean standard deviation values
+     * is bigger than the configured correctness padding value.
+     */
+    if (bestGroups.size() == 1) {
+        truechimers = grp->_servers;
+        goto finish;
+    }
+
+    min = 0;
+    for (k = 0; k < grp->_servers.size(); ++k)
+        min += grp->_servers[k]->stdDev();
+    min /= (int64_t)grp->_servers.size();
+
+    for (i = 1, j = 0; i < bestGroups.size(); ++i) {
+        grp = &groups[bestGroups[i]];
+        next = 0;
+        for (k = 0; k < grp->_servers.size(); ++k)
+            next += grp->_servers[k]->stdDev();
+        next /= (int64_t)grp->_servers.size();
+        lli = llabs(next - min);
+        if (lli > padsize) {
+            // Difference between the mean standard deviation values is big enough to be considered
+            if (next < min) {
+                bestGroups.erase(bestGroups.begin() + j);
+                j = --i;
+            }
+            else {
+                bestGroups.erase(bestGroups.begin() + i);
+                --i;
+            }
+        }
+    }
+
+    grp = &groups[bestGroups.front()];
+
+    /*
+     * If there is only one group left, consider that group as the truechimers.
+     * Otherwise, find the group with the smallest mean path delay.
+     *
+     * To avoid clock (group) hopping, check if the difference between the mean path delay values
+     * is bigger than the configured correctness padding value.
+     */
+    if (bestGroups.size() == 1) {
+        truechimers = grp->_servers;
+        goto finish;
+    }
+
+    min = 0;
+    for (k = 0; k < grp->_servers.size(); ++k)
+        min += grp->_servers[k]->calculation()->delay();
+    min /= (int64_t)grp->_servers.size();
+
+    for (i = 1, j = 0; i < bestGroups.size(); ++i) {
+        grp = &groups[bestGroups[i]];
+        next = 0;
+        for (k = 0; k < grp->_servers.size(); ++k)
+            next += grp->_servers[k]->calculation()->delay();
+        next /= (int64_t)grp->_servers.size();
+        lli = llabs(next - min);
+        if (lli > padsize) {
+            // Difference between the mean path delay values is big enough to be considered
+            if (next < min) {
+                bestGroups.erase(bestGroups.begin() + j);
+                j = --i;
+            }
+            else {
+                bestGroups.erase(bestGroups.begin() + i);
+                --i;
+            }
+        }
+    }
+
+    grp = &groups[bestGroups.front()];
+
+    // Regardless of how many groups being left, consider the first group in the list as the truechimers.
+    truechimers = grp->_servers;
+
+finish:
+    for (i = 0; i < servers.size(); ++i) {
+        if (std::find(truechimers.begin(), truechimers.end(), servers[i]) == truechimers.end())
+            servers[i]->setState(client::ServerState::falseticker);
+    }
+
+    for (i = 0; i < truechimers.size(); ++i)
+        truechimers[i]->setState(client::ServerState::candidate);
+
+    return truechimers;
+}
+
+std::vector<client::Server*> Selection::preprocess(const std::vector<client::Server*> &servers, clockid_t clockID)
 {
     std::vector<client::Server*> v;
     client::Server *srv;
@@ -370,7 +477,7 @@ std::vector<client::Server*> Selection::preprocess(const std::vector<client::Ser
         v[i]->setState(client::ServerState::ready);
 
     // Now find the truechimers from all "Ready" servers (setting their state to "Candidate")
-    v = Selection::selectTruechimers(v);
+    v = Selection::detectTruechimers(v, clockID);
 
     return v;
 }
