@@ -415,7 +415,7 @@ void ServerMode::processRequest(Request *req)
                  */
                 if (timestampLevel != req->timestampLevel() || ptp->seqID > 3000) {
                     cppLog::warningf("Error obtaining %s Timestamp for client %s, transmitting error bit",
-                            req->srcAddress().str().c_str(), ptpTimestampLevelToStr(req->timestampLevel()));
+                            ptpTimestampLevelToStr(req->timestampLevel()), req->srcAddress().str().c_str());
                     *tlv.error |= FLASH_PTP_ERROR_TX_TIMESTAMP_INVALID;
                 }
                 else {
