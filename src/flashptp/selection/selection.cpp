@@ -318,7 +318,6 @@ std::vector<client::Server*> Selection::detectTruechimers(const std::vector<clie
         grp = &groups[bestGroups[i]];
         next = grp->_max - grp->_min;
         lli = llabs(next - min);
-        printf("lli[%u]: %ld\n", i, lli);
         if (lli > padsize) {
             // Difference between the correctness intervals is big enough to be considered
             if (next < min) {
