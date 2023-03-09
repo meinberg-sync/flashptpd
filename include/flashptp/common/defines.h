@@ -236,7 +236,14 @@ inline PTPTimestampLevel ptpTimestampLevelFromShortStr(const char *str)
 #define FLASH_PTP_FLAG_SERVER_STATE_DS                          0x1
 
 // Error Codes used with FlashPTPRespTLV::error
-#define FLASH_PTP_ERROR_OP_MODE_NOT_SUPP                        0x0001
+/*
+ * If sending a Sync Response in two-step mode, the server can set this flag in a TLV
+ * attached to the Follow Up Message to indicate, that the Sync Message rx timestamp
+ * contained in this packet is invalid or does not have the expected precision/accuracy.
+ * This can be useful, if the server supports hardware timestamping, but the hardware
+ * timestamp for this specific packet could not be obtained.
+ */
+#define FLASH_PTP_ERROR_TX_TIMESTAMP_INVALID                    0x1
 
 inline static const char *flashPTPMessageTypeToStr(uint8_t *orgSubType)
 {
