@@ -258,7 +258,7 @@ std::vector<client::Server*> Selection::detectTruechimers(const std::vector<clie
     struct IntersectionGroup *grp;
     client::Server *srv;
 
-    int64_t min, max, next, lli, padsize, mod;
+    int64_t min, max, next, lli, paddingSize, maxOffsDiff;
     unsigned i, j, k;
     bool create;
 
@@ -289,12 +289,12 @@ std::vector<client::Server*> Selection::detectTruechimers(const std::vector<clie
      */
     if (_intersectionPadding == 0) {
         if (clockID == CLOCK_REALTIME)
-            padsize = FLASH_PTP_DEFAULT_SELECTION_INTERSECTION_PADDING_SW;
+            paddingSize = FLASH_PTP_DEFAULT_SELECTION_INTERSECTION_PADDING_SW;
         else
-            padsize = FLASH_PTP_DEFAULT_SELECTION_INTERSECTION_PADDING_HW;
+            paddingSize = FLASH_PTP_DEFAULT_SELECTION_INTERSECTION_PADDING_HW;
     }
     else
-        padsize = _intersectionPadding;
+        paddingSize = _intersectionPadding;
 
     /*
      * Do not group servers, that have a difference greater than the (configurable) _maxOffsetDifference
@@ -302,12 +302,12 @@ std::vector<client::Server*> Selection::detectTruechimers(const std::vector<clie
      */
     if (_maxOffsetDifference == 0) {
         if (clockID == CLOCK_REALTIME)
-            mod = FLASH_PTP_DEFAULT_SELECTION_MAX_OFFSET_DIFFERENCE_SW;
+            maxOffsDiff = FLASH_PTP_DEFAULT_SELECTION_MAX_OFFSET_DIFFERENCE_SW;
         else
-            mod = FLASH_PTP_DEFAULT_SELECTION_MAX_OFFSET_DIFFERENCE_HW;
+            maxOffsDiff = FLASH_PTP_DEFAULT_SELECTION_MAX_OFFSET_DIFFERENCE_HW;
     }
     else
-        mod = _maxOffsetDifference;
+        maxOffsDiff = _maxOffsetDifference;
 
     /*
      * Find groups of servers sharing measurement points within their correctness intervals.
@@ -328,10 +328,10 @@ std::vector<client::Server*> Selection::detectTruechimers(const std::vector<clie
         }
 
         if (create)
-            groups.emplace_back(srv, padsize, mod, min, max);
+            groups.emplace_back(srv, paddingSize, maxOffsDiff, min, max);
     }
 
-    // Determine the maximum group size and store the indices of the appropriate group(s)
+    // Determine the maximum group size and store the index/indices of the appropriate group(s)
     max = 0;
     for (i = 0; i < groups.size(); ++i) {
         grp = &groups[i];
@@ -362,7 +362,7 @@ std::vector<client::Server*> Selection::detectTruechimers(const std::vector<clie
         grp = &groups[bestGroups[i]];
         next = grp->_max - grp->_min;
         lli = llabs(next - min);
-        if (lli > padsize) {
+        if (lli > paddingSize) {
             // Difference between the intersection intervals is big enough to be considered
             if (next < min) {
                 bestGroups.erase(bestGroups.begin() + j);
@@ -401,7 +401,7 @@ std::vector<client::Server*> Selection::detectTruechimers(const std::vector<clie
             next += grp->_servers[k]->stdDev();
         next /= (int64_t)grp->_servers.size();
         lli = llabs(next - min);
-        if (lli > padsize) {
+        if (lli > paddingSize) {
             // Difference between the mean standard deviation values is big enough to be considered
             if (next < min) {
                 bestGroups.erase(bestGroups.begin() + j);
@@ -440,7 +440,7 @@ std::vector<client::Server*> Selection::detectTruechimers(const std::vector<clie
             next += grp->_servers[k]->calculation()->delay();
         next /= (int64_t)grp->_servers.size();
         lli = llabs(next - min);
-        if (lli > padsize) {
+        if (lli > paddingSize) {
             // Difference between the mean path delay values is big enough to be considered
             if (next < min) {
                 bestGroups.erase(bestGroups.begin() + j);

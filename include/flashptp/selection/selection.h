@@ -8,10 +8,12 @@
  * need to do is provide a derived class that implements the pure virtual method
  * select, add an appropriate SelectType to the enum class specified below and
  * adapt the static member functions of the Selection class to your new type.
+ * Remember to call the methods preprocess and postprocess at beginning and
+ * end of your selection algorithm.
  *
  * The number of servers, that shall be selected for clock adjustment can be
  * configured (pick). If more than one server is being selected, the adjustment
- * algorithm averages the measured offset and drift values.
+ * algorithm should average the measured offset and drift values.
  *
  * A server is considered as "falseticker" and will not be selected, if one of
  * the following checks is true:
@@ -51,6 +53,7 @@
 
 #define FLASH_PTP_JSON_CFG_SELECTION_TYPE                                   "type"
 #define FLASH_PTP_JSON_CFG_SELECTION_PICK                                   "pick"
+
 #define FLASH_PTP_JSON_CFG_SELECTION_DELAY_THRESHOLD                        "delayThreshold"
 #define FLASH_PTP_JSON_CFG_SELECTION_INTERSECTION_PADDING                   "intersectionPadding"
 #define FLASH_PTP_JSON_CFG_SELECTION_MAX_OFFSET_DIFFERENCE                  "maxOffsetDifference"
