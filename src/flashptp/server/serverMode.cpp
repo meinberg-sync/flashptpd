@@ -408,12 +408,12 @@ void ServerMode::processRequest(Request *req)
         ptp->timestamp = timestamp;
 
         if (!req->syncTLV()) {
-            if (utcOffset != INT16_MAX) {
+            if (utcOffset != INT16_MAX || ptp->seqID > 3000) {
                 /*
                  * Handle tx timestamp errors by setting the appropriate error bit and add timescale flags
                  * and UTC offset only, if the appropriate timestamp could be obtained.
                  */
-                if (timestampLevel != req->timestampLevel()) {
+                if (timestampLevel != req->timestampLevel() || ptp->seqID > 3000) {
                     cppLog::warningf("Error obtaining %s Timestamp for client %s, transmitting error bit",
                             req->srcAddress().str().c_str(), ptpTimestampLevelToStr(req->timestampLevel()));
                     *tlv.error |= FLASH_PTP_ERROR_TX_TIMESTAMP_INVALID;
