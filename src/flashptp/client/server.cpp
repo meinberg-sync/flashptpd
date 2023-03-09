@@ -60,8 +60,8 @@ Server::~Server()
 const char *Server::stateToStr(ServerState s)
 {
     switch (s) {
-    case ServerState::initializing: return "?";
-    case ServerState::unreachable: return "!";
+    case ServerState::unreachable: return "?";
+    case ServerState::faulty: return "!";
     case ServerState::collecting: return "^";
     case ServerState::falseticker: return "-";
     case ServerState::candidate: return "+";
@@ -75,6 +75,7 @@ const char *Server::stateToLongStr(ServerState s)
     switch (s) {
     case ServerState::initializing: return "Initializing";
     case ServerState::unreachable: return "Unreachable";
+    case ServerState::faulty: return "Faulty";
     case ServerState::collecting: return "Collecting";
     case ServerState::ready: return "Ready";
     case ServerState::falseticker: return "Falseticker";
@@ -549,7 +550,10 @@ Sequence *Server::processMessage(PTP2Message *msg, FlashPTPRespTLV *tlv, PTPTime
         if (seq->complete()) {
             _sequences.erase(_sequences.begin() + i);
             seq->finish();
-            onSequenceComplete(seq);
+            if (seq->hasError())
+                onSequenceError(seq);
+            else
+                onSequenceComplete(seq);
         }
         else
             break;
@@ -589,6 +593,7 @@ void Server::onSequenceComplete(Sequence *seq)
     // This function must be called with exclusively locked _mutex, see processMessage
     _reach <<= 1;
     _reach |= 1;
+    _errorCount = 0;
 
     if (seq->serverStateDSRequested()) {
         _serverStateDSValid = seq->serverStateDSValid();
@@ -644,6 +649,7 @@ void Server::onSequenceTimeout(Sequence *seq)
     // This function must be called with exclusively locked _mutex, see processMessage
     _reach <<= 1;
     _reach &= ~1;
+    _errorCount = 0;
 
     if (seq->serverStateDSRequested())
         _serverStateDSValid = false;
@@ -687,6 +693,46 @@ void Server::onSequenceTimeout(Sequence *seq)
     calcStdDev();
 
     delete seq;
+}
+
+void Server::onSequenceError(Sequence *seq)
+{
+    // This function must be called with exclusively locked _mutex, see processMessage
+    _reach <<= 1;
+    _reach |= 1;
+
+    if (seq->hasTxTimestampError())
+        cppLog::debugf("Request Sequence discarded - Server %s announced tx timestamp error (ID %u)",
+                _dstAddress.str().c_str(), seq->sequenceID());
+    else
+        cppLog::debugf("Request Sequence discarded - Server %s announced unknown error (ID %u)",
+                _dstAddress.str().c_str(), seq->sequenceID());
+
+    delete seq;
+    if (_state == ServerState::faulty)
+        return;
+
+    if (_errorCount < FLASH_PTP_CLIENT_MODE_SERVER_ERROR_LIMIT) {
+        ++_errorCount;
+        return;
+    }
+
+    _state = ServerState::faulty;
+    cppLog::warningf("Server %s announced %d consecutive errors (State = %s)",
+            _dstAddress.str().c_str(), FLASH_PTP_CLIENT_MODE_SERVER_ERROR_LIMIT, stateToLongStr(_state));
+
+    // clear filters
+    for (auto filt: _filters) {
+        if (!filt->empty())
+            filt->clear();
+    }
+
+    _calculation->reset();
+
+    for (unsigned i = 0; i < FLASH_PTP_CLIENT_MODE_SERVER_OFFSET_HISTORY_SIZE; ++i)
+        _stdDevHistory[i] = INT64_MAX;
+    _stdDevIndex = 0;
+    _stdDev = INT64_MAX;
 }
 
 std::string Server::printState() const
@@ -741,6 +787,7 @@ void Server::resetState()
     std::unique_lock ul(_mutex);
     _state = ServerState::initializing;
     _reach = 0;
+    _errorCount = 0;
 
     _serverStateDSValid = false;
 

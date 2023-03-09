@@ -117,9 +117,10 @@ public:
             return;
 
         if (tlv->valid) {
+            _error = *tlv->error;
             _t2 = *tlv->reqIngressTimestamp;
             _t2Correction = *tlv->reqCorrectionField;
-            if (_timestampLevel < PTPTimestampLevel::hardware)
+            if (msg->flags.utcReasonable)
                 _utcCorrection = (int64_t)*tlv->utcOffset * 1000000000LL;
             if (tlv->serverStateDS) {
                 _serverStateDSValid = true;
@@ -156,6 +157,9 @@ public:
                 (_t1 + _t4 - _t4Correction - _utcCorrection)) / 2;
     }
 
+    inline bool hasError() const { return _error != 0; }
+    inline bool hasTxTimestampError() const { return _error & FLASH_PTP_ERROR_TX_TIMESTAMP_INVALID; }
+
     inline bool serverStateDSRequested() const { return _serverStateDSRequested; }
     inline bool serverStateDSValid() const { return _serverStateDSValid; }
     inline const FlashPTPServerStateDS &serverStateDS() const { return _serverStateDS; }
@@ -190,6 +194,8 @@ private:
     PTP2TimeInterval _syncCorrection;
     PTP2TimeInterval _followUpCorrection;
     PTP2TimeInterval _t4Correction;
+
+    uint16_t _error{ 0 };
 
     int64_t _utcCorrection{ 0 };
     bool _serverStateDSRequested{ false };

@@ -332,6 +332,7 @@ void ServerMode::processRequest(Request *req)
     struct timespec timestamp;
     PTP2Message *ptp;
     FlashPTPRespTLV tlv;
+    int16_t utcOffset = INT16_MAX;
 
     // Check if the destination address of the request is assigned to any of the systems network interfaces
     if (!network::hasAddress(req->dstAddress(), &srcInterface)) {
@@ -369,14 +370,18 @@ void ServerMode::processRequest(Request *req)
      */
     if (timestampLevel == PTPTimestampLevel::hardware) {
         for (auto listener: _listeners) {
-            if (listener->interface() != srcInterface)
-                continue;
-
-            ptp->flags.utcReasonable = 1;
-            ptp->flags.timescale = 1;
-            *tlv.utcOffset = listener->utcOffset();
-            break;
+            if (listener->interface() == srcInterface) {
+                utcOffset = listener->utcOffset();
+                break;
+            }
         }
+    }
+
+    if (req->syncTLV() &&
+        utcOffset != INT16_MAX) {
+        ptp->flags.utcReasonable = 1;
+        ptp->flags.timescale = 1;
+        *tlv.utcOffset = utcOffset;
     }
 
     // If the FlashPTPServerStateDS has been requested by the client, append it to the Response TLV.
@@ -402,9 +407,28 @@ void ServerMode::processRequest(Request *req)
         ptp->seqID = req->sequenceID();
         ptp->timestamp = timestamp;
 
-        ptp->reorder();
-        if (!req->syncTLV())
+        if (!req->syncTLV()) {
+            if (utcOffset != INT16_MAX) {
+                /*
+                 * Handle tx timestamp errors by setting the appropriate error bit and add timescale flags
+                 * and UTC offset only, if the appropriate timestamp could be obtained.
+                 */
+                if (timestampLevel != req->timestampLevel()) {
+                    cppLog::warningf("Error obtaining %s Timestamp for client %s, transmitting error bit",
+                            ptpTimestampLevelToStr(req->timestampLevel()), req->srcAddress().str().c_str());
+                    *tlv.error |= FLASH_PTP_ERROR_TX_TIMESTAMP_INVALID;
+                }
+                else {
+                    ptp->flags.utcReasonable = 1;
+                    ptp->flags.timescale = 1;
+                    *tlv.utcOffset = utcOffset;
+                }
+            }
+
             tlv.reorder();
+        }
+
+        ptp->reorder();
 
         network::send(ptp, ntohs(ptp->totalLen), srcInterface, req->dstGeneralPort(), req->srcAddress(),
                 req->srcGeneralPort());
