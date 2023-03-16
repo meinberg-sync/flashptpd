@@ -294,9 +294,9 @@ bool Server::validateConfig(const Json &config, std::vector<std::string> *errs)
         }
         else {
             PTPVersion version = ptpVersionFromStr(it->get<std::string>().c_str());
-            if (version == PTPVersion::invalid) {
+            if (version == PTPVersion::invalid || version == PTPVersion::v1) {
                 errs->push_back(std::string("\"") + it->get<std::string>() + "\" is not a valid value (" +
-                        enumClassToStr<PTPVersion>(&ptpVersionToShortStr) + ") " \
+                        ptpVersionToShortStr(PTPVersion::v2_0) + "/" + ptpVersionToShortStr(PTPVersion::v2_1) + ") " \
                         "for property \"" FLASH_PTP_JSON_CFG_SERVER_MODE_SERVER_PTP_VERSION "\" " \
                         "within items of \"" FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVERS "\".");
                 valid = false;
