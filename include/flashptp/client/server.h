@@ -101,6 +101,7 @@
 #define FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVER_MS_TIMEOUT                "msTimeout"
 #define FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVER_NO_SELECT                 "noSelect"
 
+#define FLASH_PTP_JSON_CFG_SERVER_MODE_SERVER_PTP_VERSION               "ptpVersion"
 #define FLASH_PTP_JSON_CFG_SERVER_MODE_SERVER_TIMESTAMP_LEVEL           "timestampLevel"
 #define FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVER_FILTERS                   "filters"
 #define FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVER_CALCULATION               "calculation"
@@ -231,6 +232,7 @@ private:
     uint32_t _msTimeout{ FLASH_PTP_DEFAULT_TIMEOUT_MS };
     bool _noSelect{ false };
 
+    PTPVersion _ptpVersion{ FLASH_PTP_DEFAULT_VERSION };
     PTPTimestampLevel _timestampLevel{ PTPTimestampLevel::hardware };
 
     std::vector<filter::Filter*> _filters;
