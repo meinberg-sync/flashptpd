@@ -1,0 +1,49 @@
+{
+    "clientMode": {
+        "adjustments": [
+            {
+                "clock": "/dev/ptp0",
+                "iRatio": 0.05,
+                "pRatio": 0.3,
+                "stepThreshold": 10000000,
+                "type": "pidController"
+            }
+        ],
+        "enabled": true,
+        "selection": {
+            "pick": 1,
+            "type": "stdDev"
+        },
+        "servers": [
+            {
+                "calculation": {
+                    "size": 8,
+                    "type": "arithmeticMean"
+                },
+                "dstAddress": "192.168.10.1",
+                "filters": [
+                    {
+                        "size": 16,
+                        "type": "luckyPacket"
+                    }
+                ],
+                "interval": -4,
+                "srcInterface": "eth0",
+                "ptpVersion": "v2"
+            }
+        ]
+    },
+    "logging": {
+        "standardStreams": {
+            "enabled": false,
+            "severity": "info"
+        },
+        "syslog": {
+            "enabled": false,
+            "severity": "info"
+        }
+    },
+    "serverMode": {
+        "enabled": false
+    }
+}
