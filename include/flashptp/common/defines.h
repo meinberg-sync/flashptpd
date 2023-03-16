@@ -42,7 +42,8 @@ enum class PTPProtocol
     invalid = 0,
     ip4,
     ip6,
-    ieee_802_3
+    ieee_802_3,
+    max = ieee_802_3
 };
 
 inline static const char *ptpProtocolToStr(PTPProtocol p)
@@ -53,6 +54,26 @@ inline static const char *ptpProtocolToStr(PTPProtocol p)
     case PTPProtocol::ieee_802_3: return "IEEE 802.3";
     default: return "Invalid";
     }
+}
+
+inline static const char *ptpProtocolToShortStr(PTPProtocol p)
+{
+    switch (p) {
+    case PTPProtocol::ip4: return "ip4";
+    case PTPProtocol::ip6: return "ip6";
+    case PTPProtocol::ieee_802_3: return "ll2";
+    default: return "inv";
+    }
+}
+
+inline static PTPProtocol ptpProtocolFromStr(const char *str)
+{
+    for (int i = (int)PTPProtocol::ip4; i <= (int)PTPProtocol::ieee_802_3; ++i) {
+        if (strcasecmp(ptpProtocolToShortStr((PTPProtocol)i), str) == 0 ||
+            strcasecmp(ptpProtocolToStr((PTPProtocol)i), str) == 0)
+            return (PTPProtocol)i;
+    }
+    return PTPProtocol::invalid;
 }
 
 inline static unsigned ptpProtocolToAddrLen(PTPProtocol p)
