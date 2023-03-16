@@ -102,6 +102,26 @@ bool Listener::validateConfig(const Json &config, std::vector<std::string> *errs
         }
     }
 
+    it = config.find(FLASH_PTP_JSON_CFG_SERVER_MODE_LISTENER_PROTOCOL);
+    if (it != config.end()) {
+        if (!it->is_string()) {
+            errs->push_back(std::string("Type of property \"" FLASH_PTP_JSON_CFG_SERVER_MODE_LISTENER_PROTOCOL \
+                    "\" within items of \"" FLASH_PTP_JSON_CFG_SERVER_MODE_LISTENERS "\" " \
+                    "must be \"") + Json("").type_name() + "\".");
+            valid = false;
+        }
+        else {
+            PTPProtocol protocol = ptpProtocolFromStr(it->get<std::string>().c_str());
+            if (protocol == PTPProtocol::invalid) {
+                errs->push_back(std::string("\"") + it->get<std::string>() + "\" is not a valid value (" +
+                        enumClassToStr<PTPProtocol>(&ptpProtocolToShortStr) +
+                        ") for property \"" FLASH_PTP_JSON_CFG_SERVER_MODE_LISTENER_PROTOCOL "\" " \
+                        "within items of \"" FLASH_PTP_JSON_CFG_SERVER_MODE_LISTENERS "\".");
+                valid = false;
+            }
+        }
+    }
+
     it = config.find(FLASH_PTP_JSON_CFG_SERVER_MODE_LISTENER_TIMESTAMP_LEVEL);
     if (it != config.end()) {
         if (!it->is_string()) {
@@ -178,6 +198,12 @@ bool Listener::setConfig(const Json &config)
     else
         _generalPort = _eventPort + 1;
 
+    it = config.find(FLASH_PTP_JSON_CFG_SERVER_MODE_LISTENER_PROTOCOL);
+    if (it != config.end())
+        _protocol = ptpProtocolFromStr(it->get<std::string>().c_str());
+    else
+        _protocol = PTPProtocol::invalid;
+
     it = config.find(FLASH_PTP_JSON_CFG_SERVER_MODE_LISTENER_TIMESTAMP_LEVEL);
     if (it != config.end())
         _timestampLevel = ptpTimestampLevelFromShortStr(it->get<std::string>().c_str());
@@ -202,11 +228,18 @@ void Listener::threadFunc()
     int n;
 
     // Prepare the socket specifications to be provided to the network::recv function
-    specs.emplace_back(_interface, AF_PACKET, 0, _timestampLevel);
-    specs.emplace_back(_interface, AF_INET, _eventPort, _timestampLevel);
-    specs.emplace_back(_interface, AF_INET, _generalPort, PTPTimestampLevel::invalid);
-    specs.emplace_back(_interface, AF_INET6, _eventPort, _timestampLevel);
-    specs.emplace_back(_interface, AF_INET6, _generalPort, PTPTimestampLevel::invalid);
+    if (_protocol == PTPProtocol::invalid || _protocol == PTPProtocol::ieee_802_3)
+        specs.emplace_back(_interface, AF_PACKET, 0, _timestampLevel);
+
+    if (_protocol == PTPProtocol::invalid || _protocol == PTPProtocol::ip4) {
+        specs.emplace_back(_interface, AF_INET, _eventPort, _timestampLevel);
+        specs.emplace_back(_interface, AF_INET, _generalPort, PTPTimestampLevel::invalid);
+    }
+
+    if (_protocol == PTPProtocol::invalid || _protocol == PTPProtocol::ip6) {
+        specs.emplace_back(_interface, AF_INET6, _eventPort, _timestampLevel);
+        specs.emplace_back(_interface, AF_INET6, _generalPort, PTPTimestampLevel::invalid);
+    }
 
     while (_running) {
         /*
