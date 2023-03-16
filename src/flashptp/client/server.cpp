@@ -284,6 +284,26 @@ bool Server::validateConfig(const Json &config, std::vector<std::string> *errs)
         valid = false;
     }
 
+    it = config.find(FLASH_PTP_JSON_CFG_SERVER_MODE_SERVER_PTP_VERSION);
+    if (it != config.end()) {
+        if (!it->is_string()) {
+            errs->push_back(std::string("Type of property \"" FLASH_PTP_JSON_CFG_SERVER_MODE_SERVER_PTP_VERSION \
+                    "\" within items of \"" FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVERS "\" " \
+                    "must be \"") + Json("").type_name() + "\".");
+            valid = false;
+        }
+        else {
+            PTPVersion version = ptpVersionFromStr(it->get<std::string>().c_str());
+            if (version == PTPVersion::invalid || version == PTPVersion::v1) {
+                errs->push_back(std::string("\"") + it->get<std::string>() + "\" is not a valid value (" +
+                        ptpVersionToShortStr(PTPVersion::v2_0) + "/" + ptpVersionToShortStr(PTPVersion::v2_1) + ") " \
+                        "for property \"" FLASH_PTP_JSON_CFG_SERVER_MODE_SERVER_PTP_VERSION "\" " \
+                        "within items of \"" FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVERS "\".");
+                valid = false;
+            }
+        }
+    }
+
     it = config.find(FLASH_PTP_JSON_CFG_SERVER_MODE_SERVER_TIMESTAMP_LEVEL);
     if (it != config.end()) {
         if (!it->is_string()) {
@@ -435,6 +455,12 @@ bool Server::setConfig(const Json &config)
         it->get_to(_noSelect);
     else
         _noSelect = false;
+
+    it = config.find(FLASH_PTP_JSON_CFG_SERVER_MODE_SERVER_PTP_VERSION);
+    if (it != config.end())
+        _ptpVersion = ptpVersionFromStr(it->get<std::string>().c_str());
+    else
+        _ptpVersion = FLASH_PTP_DEFAULT_VERSION;
 
     it = config.find(FLASH_PTP_JSON_CFG_SERVER_MODE_SERVER_TIMESTAMP_LEVEL);
     if (it != config.end())
@@ -872,7 +898,7 @@ void Server::threadFunc()
         tlv.txPrepare(&buf[sizeof(*ptp)], sizeof(buf) - sizeof(*ptp),
                 requestServerStateDS ? FLASH_PTP_FLAG_SERVER_STATE_DS : 0);
 
-        *ptp = PTP2Message(PTPMessageType::sync,
+        *ptp = PTP2Message(_ptpVersion, PTPMessageType::sync,
                 _syncTLV ? (sizeof(*ptp) + tlv.len()) : sizeof(*ptp), !_oneStep);
         ptp->seqID = sequenceID;
         ptp->logMsgPeriod = _interval;
@@ -893,7 +919,7 @@ void Server::threadFunc()
                 addSequence(new Sequence(_srcInterface, _srcEventPort, _srcEventPort,
                         _dstAddress, _msTimeout, sequenceID, currentLevel, &timestamp, requestServerStateDS));
             else {
-                *ptp = PTP2Message(PTPMessageType::followUp,
+                *ptp = PTP2Message(_ptpVersion, PTPMessageType::followUp,
                         _syncTLV ? sizeof(*ptp) : (sizeof(*ptp) + tlv.len()), false);
                 ptp->seqID = sequenceID;
                 ptp->logMsgPeriod = _interval;

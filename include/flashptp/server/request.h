@@ -70,6 +70,7 @@ public:
     inline uint16_t sequenceID() const { return _sequenceID; }
 
     inline const PTP2TimeInterval &correction() const { return _correction; }
+    inline PTPVersion ptpVersion() const { return _ptpVersion; }
     inline PTPTimestampLevel timestampLevel() const { return _timestampLevel; }
     inline const PTP2Timestamp &ingressTimestamp() const { return _ingressTimestamp; }
 
@@ -119,6 +120,7 @@ public:
             timestampLevel != PTPTimestampLevel::invalid && timestamp) {
             _srcEventPort = srcPort;
             _dstEventPort = dstPort;
+            _ptpVersion = (PTPVersion)msg->version;
             _timestampLevel = timestampLevel;
             _ingressTimestamp = *timestamp;
             _oneStep = !msg->flags.twoStep;
@@ -171,6 +173,7 @@ private:
     PTP2TimeInterval _followUpCorrection;
     PTP2TimeInterval _correction;
 
+    PTPVersion _ptpVersion{ PTPVersion::invalid };
     PTPTimestampLevel _timestampLevel{ PTPTimestampLevel::invalid };
     PTP2Timestamp _ingressTimestamp;
 

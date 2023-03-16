@@ -350,7 +350,7 @@ void ServerMode::processRequest(Request *req)
 
     tlv.txPrepare(&_respbuf[sizeof(*ptp)], sizeof(_respbuf) - sizeof(*ptp), req->flags());
 
-    *ptp = PTP2Message(PTPMessageType::sync,
+    *ptp = PTP2Message(req->ptpVersion(), PTPMessageType::sync,
             req->syncTLV() ? (sizeof(*ptp) + tlv.len()) : sizeof(*ptp), !req->oneStep());
     ptp->seqID = req->sequenceID();
 
@@ -402,7 +402,7 @@ void ServerMode::processRequest(Request *req)
     if (network::send(ptp, ntohs(ptp->totalLen), srcInterface, req->dstEventPort(), req->srcAddress(),
             req->srcEventPort(), &timestampLevel, &timestamp) &&
         !req->oneStep()) {
-        *ptp = PTP2Message(PTPMessageType::followUp,
+        *ptp = PTP2Message(req->ptpVersion(), PTPMessageType::followUp,
                 req->syncTLV() ? sizeof(*ptp) : (sizeof(*ptp) + tlv.len()), false);
         ptp->seqID = req->sequenceID();
         ptp->timestamp = timestamp;

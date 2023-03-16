@@ -268,7 +268,7 @@ select_set:
             continue;
 
         msg = (PTP2Message*)buf;
-        if (msg->version != (uint8_t)FLASH_PTP_FIXED_VERSION ||
+        if ((msg->version != (uint8_t)PTPVersion::v2_0 && msg->version != (uint8_t)PTPVersion::v2_1) ||
            (((uint16_t)msg->sdoIDMajor << 8) | (uint16_t)msg->sdoIDMinor) != FLASH_PTP_FIXED_SDO_ID ||
             msg->domain != FLASH_PTP_FIXED_DOMAIN_NUMBER ||
             msg->flags.unicast == 0)
