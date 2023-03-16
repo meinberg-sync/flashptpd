@@ -49,6 +49,7 @@
 #define FLASH_PTP_JSON_CFG_SERVER_MODE_LISTENER_EVENT_PORT          "eventPort"
 #define FLASH_PTP_JSON_CFG_SERVER_MODE_LISTENER_GENERAL_PORT        "generalPort"
 
+#define FLASH_PTP_JSON_CFG_SERVER_MODE_LISTENER_PROTOCOL            "protocol"
 #define FLASH_PTP_JSON_CFG_SERVER_MODE_LISTENER_TIMESTAMP_LEVEL     "timestampLevel"
 #define FLASH_PTP_JSON_CFG_SERVER_MODE_LISTENER_UTC_OFFSET          "utcOffset"
 
@@ -83,6 +84,7 @@ private:
     uint16_t _eventPort{ FLASH_PTP_UDP_EVENT_PORT };
     uint16_t _generalPort{ FLASH_PTP_UDP_GENERAL_PORT };
 
+    PTPProtocol _protocol{ PTPProtocol::invalid };
     PTPTimestampLevel _timestampLevel{ PTPTimestampLevel::hardware };
     int16_t _utcOffset{ FLASH_PTP_DEFAULT_UTC_OFFSET };
 };
