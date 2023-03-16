@@ -108,9 +108,11 @@ inline static PTPProtocol ptpProtocolFromFamily(unsigned f)
 
 enum class PTPVersion
 {
-    v1 = 1,
+    invalid,
+    v1,
     v2_0,
-    v2_1 = 0x12
+    v2_1 = 0x12,
+    max = v2_1
 };
 
 inline static const char *ptpVersionToStr(PTPVersion v)
@@ -121,6 +123,28 @@ inline static const char *ptpVersionToStr(PTPVersion v)
     case PTPVersion::v2_1: return "PTPv2.1";
     default: return "Invalid";
     }
+}
+
+inline static const char *ptpVersionToShortStr(PTPVersion v)
+{
+    switch (v) {
+    case PTPVersion::v1: return "v1";
+    case PTPVersion::v2_0: return "v2";
+    case PTPVersion::v2_1: return "v2.1";
+    default: return "inv";
+    }
+}
+
+inline static PTPVersion ptpVersionFromStr(const char *str)
+{
+    for (int i = (int)PTPVersion::v1; i <= (int)PTPVersion::max; ++i) {
+        if (i > (int)PTPVersion::v2_0 && i < (int)PTPVersion::v2_1)
+            continue;
+        if (strcasecmp(ptpVersionToShortStr((PTPVersion)i), str) == 0 ||
+            strcasecmp(ptpVersionToStr((PTPVersion)i), str) == 0)
+            return (PTPVersion)i;
+    }
+    return PTPVersion::invalid;
 }
 
 enum class PTPMessageType
@@ -209,10 +233,10 @@ inline PTPTimestampLevel ptpTimestampLevelFromShortStr(const char *str)
 
 #define FLASH_PTP_SYSTEM_CLOCK_NAME                             "system"
 
-#define FLASH_PTP_FIXED_VERSION                                 PTPVersion::v2_1
 #define FLASH_PTP_FIXED_SDO_ID                                  0x000
 #define FLASH_PTP_FIXED_DOMAIN_NUMBER                           0
 
+#define FLASH_PTP_DEFAULT_VERSION                               PTPVersion::v2_1
 #define FLASH_PTP_DEFAULT_INTERVAL                              0
 #define FLASH_PTP_DEFAULT_STATE_INTERVAL                        0x7f
 
@@ -327,11 +351,14 @@ inline std::string nanosecondsToStr(int64_t ns)
 template<typename T>
 inline static std::string enumClassToStr(const char*(toStr)(T))
 {
-    std::string str;
+    std::string str, next;
     for (int i = (int)T::invalid + 1; i <= (int)T::max; ++i) {
+        next = toStr((T)i);
+        if (next == "inv" || next == "Invalid")
+            continue;
         if (!str.empty())
             str.append("/");
-        str.append(toStr((T)i));
+        str.append(next);
     }
     return str;
 }
@@ -569,11 +596,12 @@ struct PTP2Message
         timestamp.reorder(ntoh);
     }
 
-    inline void init(PTPMessageType type, uint16_t length, bool twoStep = false)
+    inline void init(PTPVersion v, PTPMessageType type, uint16_t length,
+            bool twoStep = false)
     {
         msgType = (uint8_t)type;
         sdoIDMajor = (FLASH_PTP_FIXED_SDO_ID >> 8) & 0xf;
-        version = (uint8_t)FLASH_PTP_FIXED_VERSION;
+        version = (uint8_t)v;
         totalLen = length;
         domain = FLASH_PTP_FIXED_DOMAIN_NUMBER;
         sdoIDMinor = (FLASH_PTP_FIXED_SDO_ID & 0xff);
@@ -587,9 +615,9 @@ struct PTP2Message
         logMsgPeriod = 0x7f;
     }
 
-    inline PTP2Message(PTPMessageType type, uint16_t length, bool twoStep)
+    inline PTP2Message(PTPVersion v, PTPMessageType type, uint16_t length, bool twoStep)
     {
-        init(type, length, twoStep);
+        init(v, type, length, twoStep);
     }
 };
 
