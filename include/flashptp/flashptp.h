@@ -46,8 +46,7 @@ public:
     inline ~FlashPTP() { if (_running) stop(); network::exit(); cppLog::exit(); }
 
     static bool validateConfig(const Json &config, std::vector<std::string> *errs);
-    bool setConfig(const Json &config, const std::string &configFile = "",
-            std::vector<std::string> *errs = nullptr);
+    bool setConfig(const Json &config, std::vector<std::string> *errs = nullptr);
 
     inline client::ClientMode &clientMode() { return _clientMode; }
     inline server::ServerMode &serverMode() { return _serverMode; }
@@ -71,9 +70,6 @@ public:
 
 private:
     bool _running{ false };
-
-    Json _config{ Json::object() };
-    std::string _configFile;
 
     client::ClientMode _clientMode{ this };
     server::ServerMode _serverMode{ this };

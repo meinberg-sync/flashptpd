@@ -111,7 +111,7 @@ bool FlashPTP::validateConfig(const Json &config, std::vector<std::string> *errs
     return valid;
 }
 
-bool FlashPTP::setConfig(const Json &config, const std::string &configFile, std::vector<std::string> *errs)
+bool FlashPTP::setConfig(const Json &config, std::vector<std::string> *errs)
 {
     if (errs) {
         if (!validateConfig(config, errs))
@@ -125,12 +125,6 @@ bool FlashPTP::setConfig(const Json &config, const std::string &configFile, std:
 
     Json::const_iterator it, iit;
     int ms = 3000;
-
-    if (!configFile.empty())
-        _configFile = configFile;
-
-    if (config == _config)
-        goto out_write;
 
     it = config.find(FLASH_PTP_JSON_CFG_LOGGING);
     if (it != config.end())
@@ -157,14 +151,6 @@ bool FlashPTP::setConfig(const Json &config, const std::string &configFile, std:
         _serverMode.setConfig(*it);
     else
         _serverMode.setConfig(Json::object());
-
-    _config = config;
-
-out_write:
-    if (!_configFile.empty()) {
-        std::ofstream ofs(_configFile);
-        ofs << _config.dump(4, ' ', false, Json::error_handler_t::replace);
-    }
 
     return true;
 }
