@@ -98,6 +98,14 @@ bool ClientMode::validateConfig(const Json &config, std::vector<std::string> *er
         }
     }
 
+    it = config.find(FLASH_PTP_JSON_CFG_CLIENT_MODE_STATE_FILE);
+    if (it != config.end() && !it->is_string()) {
+        errs->push_back(std::string("Type of property \"" FLASH_PTP_JSON_CFG_CLIENT_MODE_STATE_FILE "\" " \
+                "within object \"" FLASH_PTP_JSON_CFG_CLIENT_MODE "\" " \
+                "must be \"") + Json("").type_name() + "\".");
+        valid = false;
+    }
+
     return valid;
 }
 
@@ -154,6 +162,12 @@ bool ClientMode::setConfig(const Json &config, std::vector<std::string> *errs)
     else
         _adjustments.push_back(new adjustment::Adjtimex());
 
+    it = config.find(FLASH_PTP_JSON_CFG_CLIENT_MODE_STATE_FILE);
+    if (it != config.end())
+        it->get_to(_stateFile);
+    else
+        _stateFile.clear();
+
     if (_enabled) {
         if (_servers.empty())
             cppLog::warningf("%s is enabled, but no " FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVERS \
@@ -177,13 +191,13 @@ void ClientMode::resetUnusedServersStates()
     }
 }
 
-void ClientMode::printServers()
+void ClientMode::printState()
 {
-    if (_serversFile.empty())
+    if (_stateFile.empty())
         return;
 
     std::ofstream ofs;
-    ofs.open(_serversFile.c_str());
+    ofs.open(_stateFile.c_str());
     if (!ofs.good())
         return;
 
@@ -301,12 +315,12 @@ void ClientMode::threadFunc()
     while (_running) {
         performAdjustments();
 
-        // Reset unused servers states and print servers file (if set) once per second
+        // Reset unused servers states and print state file (if set) once per second
         clock_gettime(CLOCK_MONOTONIC, &timestamp);
         if (timestamp.tv_sec != tprev) {
             tprev = timestamp.tv_sec;
             resetUnusedServersStates();
-            printServers();
+            printState();
         }
 
         /*
