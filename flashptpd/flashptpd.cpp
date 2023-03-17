@@ -37,33 +37,74 @@
 using namespace flashptp;
 volatile std::sig_atomic_t __signalStatus;
 
-void signalHandler(int signal)
-{
-    if (signal == SIGPIPE)
-        return;
+enum class CmdLineArg {
+    invalid = -1,
+    min,
+    configFile = min,
+    stateFile,
+    printInventory,
+    fork,
+    help,
+    max = help
+};
 
-    __signalStatus = signal;
+static const char __arg_chars[] = {
+    'c',
+    'q',
+    'p',
+    'f',
+    'h'
+};
+
+static const char *__arg_strs[] = {
+    "configFile",
+    "stateFile",
+    "printInventory",
+    "fork",
+    "help"
+};
+
+static const char *__arg_descs[] = {
+    "name of the configuration file in JSON format",
+    "periodically print the servers states to the specified file (client mode)",
+    "print system inventory (interfaces, addresses, timestampers) and exit",
+    "fork service into background",
+    "print this usage information"
+};
+
+static CmdLineArg cmdLineArgFromChar(char c)
+{
+    for (int i = (int)CmdLineArg::min; i <= (int)CmdLineArg::max; ++i) {
+        if (__arg_chars[i] == c)
+            return (CmdLineArg)i;
+    }
+    return CmdLineArg::invalid;
+}
+
+static CmdLineArg cmdLineArgFromStr(const char *str)
+{
+    for (int i = (int)CmdLineArg::min; i <= (int)CmdLineArg::max; ++i) {
+        if (strcasecmp(__arg_strs[i], str) == 0)
+            return (CmdLineArg)i;
+    }
+    return CmdLineArg::invalid;
 }
 
 void printUsage()
 {
     printf("%s v%s\n", FLASH_PTP_DAEMON, FLASH_PTP_VERSION);
-    printf("Usage: [-c <str>] [-f] [-h]\n");
-    printf("  %-6s%-16s%s\n", "-c", "--config", "flashPTP configuration file in JSON format");
-    printf("  %-6s%-16s%s\n", "-s", "--servers", "name a file to periodically print a list of the servers and");
-    printf("  %-6s%-16s%s\n", "", "", "a short summary of their current state to (client mode)");
-    printf("  %-6s%-16s%s\n", "-f", "--fork", "fork service into background");
-    printf("  %-6s%-16s%s\n", "-i", "--inventory", "show system inventory (interfaces, addresses, timestampers) and exit");
-    printf("  %-6s%-16s%s\n", "-h", "--help", "print this usage information");
+    printf("Usage:\n");
+    for (int i = (int)CmdLineArg::min; i <= (int)CmdLineArg::max; ++i)
+        printf("  -%c    --%-14s%s\n", __arg_chars[i], __arg_strs[i], __arg_descs[i]);
     printf("\n");
 }
 
-bool parseArgs(Json &config, std::string &configFile, std::string &serversFile, bool &inventory, bool &daemonize,
-        int argc, char **argv)
+bool parseArgs(Json &config, bool &inventory, bool &daemonize, int argc, char **argv)
 {
     char *arg, *val, c;
     std::ifstream ifs;
     std::ofstream ofs;
+    CmdLineArg a;
 
     for (int i = 1; i < argc; ++i) {
         arg = argv[i];
@@ -72,57 +113,63 @@ bool parseArgs(Json &config, std::string &configFile, std::string &serversFile, 
             return false;
         }
 
-        if (arg[1] == '-') {
-            if (strlen(arg) < 3) {
-                printf("Argument '%s' is invalid!\n", arg);
-                return false;
-            }
-
-            if (strcmp(&arg[2], "config") == 0)
-                c = 'c';
-            else if (strcmp(&arg[2], "servers") == 0)
-                c = 's';
-            else if (strcmp(&arg[2], "inventory") == 0)
-                c = 'i';
-            else if (strcmp(&arg[2], "fork") == 0)
-                c = 'f';
-            else if (strcmp(&arg[2], "help") == 0)
-                c = 'h';
-            else {
-                printf("Argument '%s' is invalid!\n", arg);
-                return false;
-            }
-        }
+        if (arg[1] == '-')
+            a = cmdLineArgFromStr(&arg[2]);
         else
-            c = arg[1];
+            a = cmdLineArgFromChar(arg[1]);
 
-        switch (c) {
-        case 'c':
-            ++i;
-            if (i >= argc) {
-                printf("No filename specified for argument '%s'!\n", arg);
-                return false;
-            }
+        if (a == CmdLineArg::invalid) {
+            printf("Argument '%s' is invalid!\n", arg);
+            return false;
+        }
+        else if (a != CmdLineArg::configFile) {
+            if (a == CmdLineArg::stateFile)
+                ++i;
+            continue;
+        }
 
-            val = argv[i];
-            ifs.open(val);
-            if (!ifs.good()) {
-                printf("Config file '%s' could not be opened!\n", val);
-                return false;
-            }
+        ++i;
+        if (i >= argc) {
+            printf("No filename specified for argument '%s'!\n", arg);
+            return false;
+        }
 
-            config = Json::parse(ifs, nullptr, false);
-            ifs.close();
+        val = argv[i];
+        ifs.open(val);
+        if (!ifs.good()) {
+            printf("Config file '%s' could not be opened!\n", val);
+            return false;
+        }
 
-            if (config.is_discarded()) {
-                printf("Config file '%s' is of invalid format!\n", val);
-                return false;
-            }
+        config = Json::parse(ifs, nullptr, false);
+        ifs.close();
 
-            configFile = argv[i];
-            break;
+        if (config.is_discarded()) {
+            printf("Config file '%s' is of invalid format!\n", val);
+            return false;
+        }
 
-        case 's':
+        break;
+    }
+
+    if (config.is_null())
+        config = Json::object();
+
+    for (int i = 1; i < argc; ++i) {
+        arg = argv[i];
+        if (strlen(arg) < 2 || arg[0] != '-') {
+            printf("Argument '%s' is invalid!\n", arg);
+            return false;
+        }
+
+        if (arg[1] == '-')
+            a = cmdLineArgFromStr(&arg[2]);
+        else
+            a = cmdLineArgFromChar(arg[1]);
+
+        switch (a) {
+        case CmdLineArg::configFile: ++i; continue;
+        case CmdLineArg::stateFile:
             ++i;
             if (i >= argc) {
                 printf("No filename specified for argument '%s'!\n", arg);
@@ -132,17 +179,17 @@ bool parseArgs(Json &config, std::string &configFile, std::string &serversFile, 
             val = argv[i];
             ofs.open(val);
             if (!ofs.good()) {
-                printf("Servers file '%s' could not be opened with write access!\n", val);
+                printf("State file '%s' could not be opened with write access!\n", val);
                 return false;
             }
 
             ofs.close();
-            serversFile = val;
+            config[FLASH_PTP_JSON_CFG_CLIENT_MODE][FLASH_PTP_JSON_CFG_CLIENT_MODE_STATE_FILE] = val;
             break;
 
-        case 'f': daemonize = true; break;
-        case 'i': inventory = true; break;
-        case 'h': return false;
+        case CmdLineArg::printInventory: inventory = true; break;
+        case CmdLineArg::fork: daemonize = true; break;
+        case CmdLineArg::help: return false;
         default:
             printf("Argument '%s' is invalid!\n", arg);
             return false;
@@ -152,19 +199,26 @@ bool parseArgs(Json &config, std::string &configFile, std::string &serversFile, 
     return true;
 }
 
+void signalHandler(int signal)
+{
+    if (signal == SIGPIPE)
+        return;
+
+    __signalStatus = signal;
+}
+
 int main(int argc, char **argv)
 {
     std::vector<std::string> configErrs;
-    std::string configFile, serversFile;
-    Json config;
     bool inventory, daemonize;
+    Json config;
     FlashPTP *f;
 
     __signalStatus = 0;
 
     inventory = false;
     daemonize = false;
-    if (!parseArgs(config, configFile, serversFile, inventory, daemonize, argc, argv)) {
+    if (!parseArgs(config, inventory, daemonize, argc, argv)) {
         printUsage();
         std::exit(EXIT_FAILURE);
     }
@@ -185,8 +239,8 @@ int main(int argc, char **argv)
         std::exit(EXIT_SUCCESS);
     }
 
-    if (configFile.empty()) {
-        printf("No config file specified!\n");
+    if (config.empty()) {
+        printf("No config (file or command line arguments) specified!\n");
         printUsage();
         std::exit(EXIT_FAILURE);
     }
@@ -215,7 +269,7 @@ int main(int argc, char **argv)
     f = new FlashPTP();
 
     if (!f->validateConfig(config, &configErrs)) {
-        printf("Config file '%s' is invalid:\n", configFile.c_str());
+        printf("Configuration is invalid:\n");
         for (const auto &str: configErrs)
             printf("%s\n", str.c_str());
         std::exit(EXIT_FAILURE);
@@ -225,9 +279,7 @@ int main(int argc, char **argv)
     std::signal(SIGPIPE, signalHandler);
     std::signal(SIGTERM, signalHandler);
 
-    f->setConfig(config, configFile);
-    if (!serversFile.empty())
-        f->clientMode().setServersFile(serversFile);
+    f->setConfig(config);
     f->start();
 
     while (__signalStatus == 0) {
