@@ -49,6 +49,7 @@ bool FlashPTP::validateConfig(const Json &config, std::vector<std::string> *errs
         else {
             cppLog::LogType lt;
             cppLog::LogSeverity ls;
+
             for (auto &pit: it->items()) {
                 lt = cppLog::logTypeFromStr(pit.key().c_str());
                 if (lt == cppLog::LogType::invalid) {
@@ -65,6 +66,8 @@ bool FlashPTP::validateConfig(const Json &config, std::vector<std::string> *errs
                             "must be \"" + Json(false).type_name() + "\".");
                     valid = false;
                 }
+                else if (!iit->get<bool>())
+                    continue;
 
                 iit = pit.value().find(CPP_LOG_CONFIG_INSTANCE_SEVERITY);
                 if (iit != pit.value().end()) {
@@ -138,7 +141,10 @@ bool FlashPTP::setConfig(const Json &config, std::vector<std::string> *errs)
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
             ms -= 100;
         }
+        _networkOwner = true;
     }
+    else
+        _networkOwner = false;
 
     it = config.find(FLASH_PTP_JSON_CFG_CLIENT_MODE);
     if (it != config.end())

@@ -43,7 +43,7 @@ namespace flashptp {
 
 class FlashPTP {
 public:
-    inline ~FlashPTP() { if (_running) stop(); network::exit(); cppLog::exit(); }
+    inline ~FlashPTP() { if (_running) stop(); if (_networkOwner) network::exit(); cppLog::exit(); }
 
     static bool validateConfig(const Json &config, std::vector<std::string> *errs);
     bool setConfig(const Json &config, std::vector<std::string> *errs = nullptr);
@@ -70,6 +70,7 @@ public:
 
 private:
     bool _running{ false };
+    bool _networkOwner{ false };
 
     client::ClientMode _clientMode{ this };
     server::ServerMode _serverMode{ this };
