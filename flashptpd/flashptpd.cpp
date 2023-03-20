@@ -579,15 +579,12 @@ int main(int argc, char **argv)
         std::exit(EXIT_FAILURE);
     }
 
-    // print network interfaces, addresses and capabilities (PHCs)
-    if (inventory)
+    if (inventory) {
+        // print network interfaces, addresses and capabilities (PHCs) and exit
         network::print();
-
-    network::exit();
-
-    // exit if inventory option has been set via command line
-    if (inventory)
+        network::exit();
         std::exit(EXIT_SUCCESS);
+    }
 
     if (config.empty()) {
         printf("No config (file or command line arguments) specified!\n");
@@ -638,6 +635,8 @@ int main(int argc, char **argv)
 
     f->stop();
     delete f;
+
+    network::exit();
 
     std::exit(EXIT_SUCCESS);
 }
