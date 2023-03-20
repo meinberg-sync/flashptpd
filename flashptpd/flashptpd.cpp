@@ -78,7 +78,7 @@ static const char __arg_chars[] = {
     'l',
     'm',
     'q',
-    'f',
+    'j',
     's',
     'x',
     'p',
