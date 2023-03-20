@@ -33,6 +33,7 @@
  */
 
 #include <flashptp/flashptp.h>
+#include <flashptp/adjustment/pidController.h>
 
 using namespace flashptp;
 volatile std::sig_atomic_t __signalStatus;
@@ -51,6 +52,8 @@ enum class CmdLineArg {
     utcOffset,
     networkProtocol,
     timestampLevel,
+    pRatio,
+    iRatio,
     logLevel,
     standardOut,
     noSyslog,
@@ -75,12 +78,14 @@ static const char __arg_chars[] = {
     'u',
     'n',
     't',
+    'x',
+    'y',
     'l',
     'm',
     'q',
     'j',
     's',
-    'x',
+    'w',
     'p',
     'f',
     'h'
@@ -98,6 +103,8 @@ static const char *__arg_strs[] = {
     "utcOffset",
     "networkProtocol",
     "timestampLevel",
+    "pRatio",
+    "iRatio",
     "logLevel",
     "standardOut",
     "noSyslog",
@@ -121,6 +128,8 @@ static const char *__arg_descs[] = {
     "offset to UTC in seconds (to be announced in server mode)",
     "network protocol to be used in server mode (if not any)",
     "fixed timestamp level to be used (hw/so/usr)",
+    "proportional ratio to be used by PID controller adjustment algorithm",
+    "integral ratio to be used by PID controller adjustment algorithm",
     "set the log level for all enabled channels",
     "print logs to stdout",
     "do not print logs to syslog",
@@ -173,6 +182,7 @@ bool parseArgs(Json &config, bool &inventory, bool &daemonize, int argc, char **
     PTPTimestampLevel tslvl;
     PTPProtocol prot;
     bool srv, sttbl;
+    double pr, ir;
     int utc;
     CmdLineArg a;
     unsigned lpf;
@@ -246,6 +256,9 @@ bool parseArgs(Json &config, bool &inventory, bool &daemonize, int argc, char **
     srv = false;
     sttbl = false;
     utc = 0;
+
+    pr = FLASH_PTP_PID_CONTROLLER_P_RATIO_DEFAULT;
+    ir = FLASH_PTP_PID_CONTROLLER_I_RATIO_DEFAULT;
 
     for (int i = 1; i < argc; ++i) {
         arg = argv[i];
@@ -392,6 +405,36 @@ bool parseArgs(Json &config, bool &inventory, bool &daemonize, int argc, char **
             }
             break;
 
+        case CmdLineArg::pRatio:
+            ++i;
+            if (i >= argc) {
+                printf("No ratio specified for argument '%s'!\n", arg);
+                return false;
+            }
+
+            pr = strtod(argv[i], NULL);
+            if (pr < FLASH_PTP_PID_CONTROLLER_P_RATIO_MIN || pr > FLASH_PTP_PID_CONTROLLER_P_RATIO_MAX) {
+                printf("'%s' is not a valid proportional ratio (%f <= n <= %f)\n", argv[i],
+                        FLASH_PTP_PID_CONTROLLER_P_RATIO_MIN, (float)FLASH_PTP_PID_CONTROLLER_P_RATIO_MAX);
+                return false;
+            }
+            break;
+
+        case CmdLineArg::iRatio:
+            ++i;
+            if (i >= argc) {
+                printf("No ratio specified for argument '%s'!\n", arg);
+                return false;
+            }
+
+            ir = strtod(argv[i], NULL);
+            if (ir < FLASH_PTP_PID_CONTROLLER_I_RATIO_MIN || ir > FLASH_PTP_PID_CONTROLLER_I_RATIO_MAX) {
+                printf("'%s' is not a valid integral ratio (%f <= n <= %f)\n", argv[i],
+                        FLASH_PTP_PID_CONTROLLER_I_RATIO_MIN, FLASH_PTP_PID_CONTROLLER_I_RATIO_MAX);
+                return false;
+            }
+            break;
+
         case CmdLineArg::logLevel:
             ++i;
             if (i >= argc) {
@@ -505,6 +548,8 @@ bool parseArgs(Json &config, bool &inventory, bool &daemonize, int argc, char **
             adjustment[FLASH_PTP_JSON_CFG_ADJUSTMENT_TYPE] =
                     adjustment::Adjustment::typeToStr(adjustment::AdjustmentType::pidController);
             adjustment[FLASH_PTP_JSON_CFG_ADJUSTMENT_CLOCK] = phc;
+            adjustment[FLASH_PTP_JSON_CFG_PID_CONTROLLER_P_RATIO] = pr;
+            adjustment[FLASH_PTP_JSON_CFG_PID_CONTROLLER_I_RATIO] = ir;
 
             clientMode[FLASH_PTP_JSON_CFG_CLIENT_MODE_ADJUSTMENTS] = Json::array();
             clientMode[FLASH_PTP_JSON_CFG_CLIENT_MODE_ADJUSTMENTS].push_back(std::move(adjustment));
