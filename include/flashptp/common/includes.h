@@ -42,6 +42,7 @@
 #include <cstdlib>
 #include <deque>
 #include <fstream>
+#include <iostream>
 #include <shared_mutex>
 #include <thread>
 #include <vector>

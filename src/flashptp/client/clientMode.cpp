@@ -106,6 +106,14 @@ bool ClientMode::validateConfig(const Json &config, std::vector<std::string> *er
         valid = false;
     }
 
+    it = config.find(FLASH_PTP_JSON_CFG_CLIENT_MODE_STATE_TABLE);
+    if (it != config.end() && !it->is_boolean()) {
+        errs->push_back(std::string("Type of property \"" FLASH_PTP_JSON_CFG_CLIENT_MODE_STATE_TABLE "\" " \
+                "within object \"" FLASH_PTP_JSON_CFG_CLIENT_MODE "\" " \
+                "must be \"") + Json(false).type_name() + "\".");
+        valid = false;
+    }
+
     return valid;
 }
 
@@ -168,6 +176,12 @@ bool ClientMode::setConfig(const Json &config, std::vector<std::string> *errs)
     else
         _stateFile.clear();
 
+    it = config.find(FLASH_PTP_JSON_CFG_CLIENT_MODE_STATE_TABLE);
+    if (it != config.end())
+        it->get_to(_stateTable);
+    else
+        _stateTable = false;
+
     if (_enabled) {
         if (_servers.empty())
             cppLog::warningf("%s is enabled, but no " FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVERS \
@@ -193,34 +207,47 @@ void ClientMode::resetUnusedServersStates()
 
 void ClientMode::printState()
 {
-    if (_stateFile.empty())
+    if (_stateFile.empty() && !_stateTable)
         return;
 
-    std::ofstream ofs;
-    ofs.open(_stateFile.c_str());
-    if (!ofs.good())
-        return;
+    std::stringstream ss;
+    unsigned i;
 
-    ofs << std::setfill(' ');
-    ofs << std::setw(FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_STATE) << std::left << "";
-    ofs << std::setw(FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_SERVER) << std::left << "server";
-    ofs << std::setw(FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_CLOCK) << std::left << "clock";
-    ofs << std::setw(FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_BTCA) << std::left << "p1/cc/ca/cv/p2/sr";
-    ofs << std::setw(FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_REACH) << std::left << "reach";
-    ofs << std::setw(FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_INTV) << std::left << "intv";
-    ofs << std::setw(FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_DELAY) << std::left << "delay";
-    ofs << std::setw(FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_OFFSET) << std::left << "offset";
-    ofs << std::setw(FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_STD_DEV) << std::left << "stdDev";
-    ofs << std::endl;
+    ss << std::setfill(' ');
+    ss << std::setw(FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_STATE) << std::left << "";
+    ss << std::setw(FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_SERVER) << std::left << "server";
+    ss << std::setw(FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_CLOCK) << std::left << "clock";
+    ss << std::setw(FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_BTCA) << std::left << "p1/cc/ca/cv/p2/sr";
+    ss << std::setw(FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_REACH) << std::left << "reach";
+    ss << std::setw(FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_INTV) << std::left << "intv";
+    ss << std::setw(FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_DELAY) << std::left << "delay";
+    ss << std::setw(FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_OFFSET) << std::left << "offset";
+    ss << std::setw(FLASH_PTP_CLIENT_MODE_SERVER_STATS_COL_STD_DEV) << std::left << "stdDev";
+    ss << std::endl;
 
-    for (unsigned i = 0; i < FLASH_PTP_CLIENT_MODE_SERVER_STATS_LEN; ++i)
-        ofs << "=";
-    ofs << std::endl;
+    for (i = 0; i < FLASH_PTP_CLIENT_MODE_SERVER_STATS_LEN; ++i)
+        ss << "=";
+    ss << std::endl;
 
     for (const auto s: _servers)
-        ofs << s->printState() << std::endl;
+        ss << s->printState() << std::endl;
 
-    ofs.close();
+    if (!_stateFile.empty()) {
+        std::ofstream ofs;
+        ofs.open(_stateFile.c_str());
+        if (ofs.good()) {
+            ofs << ss.str();
+            ofs.close();
+        }
+    }
+
+    if (_stateTable) {
+        for (i = 0; i < _stateTableRows; ++i)
+            std::cout << "\033[2K\r\033[A";
+        std::cout << "\033[2K\r";
+        std::cout << ss.str();
+        _stateTableRows = _servers.size() + 2;
+    }
 }
 
 bool ClientMode::hasAdjustment(clockid_t id) const

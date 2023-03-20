@@ -58,6 +58,7 @@
 #define FLASH_PTP_JSON_CFG_CLIENT_MODE_SELECTION        "selection"
 #define FLASH_PTP_JSON_CFG_CLIENT_MODE_ADJUSTMENTS      "adjustments"
 #define FLASH_PTP_JSON_CFG_CLIENT_MODE_STATE_FILE       "stateFile"
+#define FLASH_PTP_JSON_CFG_CLIENT_MODE_STATE_TABLE      "stateTable"
 
 namespace flashptp {
 
@@ -108,6 +109,9 @@ private:
     }
 
     std::string _stateFile;
+    bool _stateTable{ false };
+    unsigned _stateTableRows{ 0 };
+
     std::vector<Server*> _servers;
 
     selection::Selection *_selection{ nullptr };
