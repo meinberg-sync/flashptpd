@@ -44,8 +44,12 @@ enum class CmdLineArg {
     interface,
     destAddress,
     reqInterval,
+    luckyPacket,
     stateInterval,
     ptpVersion,
+    serverMode,
+    utcOffset,
+    networkProtocol,
     timestampLevel,
     logLevel,
     standardOut,
@@ -64,8 +68,12 @@ static const char __arg_chars[] = {
     'i',
     'd',
     'r',
+    'z',
     'g',
     'v',
+    'e',
+    'u',
+    'n',
     't',
     'l',
     'm',
@@ -83,8 +91,12 @@ static const char *__arg_strs[] = {
     "interface",
     "destAddress",
     "reqInterval",
+    "luckyPacket",
     "stateInterval",
     "ptpVersion",
+    "serverMode",
+    "utcOffset",
+    "networkProtocol",
     "timestampLevel",
     "logLevel",
     "standardOut",
@@ -102,8 +114,12 @@ static const char *__arg_descs[] = {
     "network interface to be used (e.g., \"enp1s0\")",
     "server destination address in client mode (MAC, IPv4 or IPv6)",
     "interval to be used for external server requests (2^n)",
+    "enable and set size of lucky packet filter",
     "interval to be used for external server state queries (2^n)",
     "PTP version to be used for server requests (v2/v2.1)",
+    "enable server mode on the specified network interface",
+    "offset to UTC in seconds (to be announced in server mode)",
+    "network protocol to be used in server mode (if not any)",
     "fixed timestamp level to be used (hw/so/usr)",
     "set the log level for all enabled channels",
     "print logs to stdout",
@@ -155,8 +171,11 @@ bool parseArgs(Json &config, bool &inventory, bool &daemonize, int argc, char **
     network::Address destAddr;
     PTPVersion vers;
     PTPTimestampLevel tslvl;
-    bool stateTable;
+    PTPProtocol prot;
+    bool srv, sttbl;
+    int utc;
     CmdLineArg a;
+    unsigned lpf;
 
     for (int i = 1; i < argc; ++i) {
         arg = argv[i];
@@ -175,7 +194,8 @@ bool parseArgs(Json &config, bool &inventory, bool &daemonize, int argc, char **
             return false;
         }
         else if (a != CmdLineArg::configFile) {
-            if (a != CmdLineArg::standardOut &&
+            if (a != CmdLineArg::serverMode &&
+                a != CmdLineArg::standardOut &&
                 a != CmdLineArg::noSyslog &&
                 a != CmdLineArg::stateTable &&
                 a != CmdLineArg::printInventory &&
@@ -218,10 +238,14 @@ bool parseArgs(Json &config, bool &inventory, bool &daemonize, int argc, char **
     log[cppLog::logTypeToStr(cppLog::LogType::syslog)][CPP_LOG_CONFIG_INSTANCE_ENABLED] = true;
 
     ri = 0;
+    lpf = 0;
     si = INT8_MAX;
     vers = PTPVersion::invalid;
     tslvl = PTPTimestampLevel::invalid;
-    stateTable = false;
+    prot = PTPProtocol::invalid;
+    srv = false;
+    sttbl = false;
+    utc = 0;
 
     for (int i = 1; i < argc; ++i) {
         arg = argv[i];
@@ -280,6 +304,20 @@ bool parseArgs(Json &config, bool &inventory, bool &daemonize, int argc, char **
             }
             break;
 
+        case CmdLineArg::luckyPacket:
+            ++i;
+            if (i >= argc) {
+                printf("No filter size specified for argument '%s'!\n", arg);
+                return false;
+            }
+
+            lpf = atoi(argv[i]);
+            if (lpf <= 1) {
+                printf("'%s' is not a valid filter size (1 < n)\n", argv[i]);
+                return false;
+            }
+            break;
+
         case CmdLineArg::stateInterval:
             ++i;
             if (i >= argc) {
@@ -304,6 +342,37 @@ bool parseArgs(Json &config, bool &inventory, bool &daemonize, int argc, char **
             vers = ptpVersionFromStr(argv[i]);
             if (vers != PTPVersion::v2_0 && vers != PTPVersion::v2_1) {
                 printf("'%s' is not a valid PTP version (v2/v2.1)\n", argv[i]);
+                return false;
+            }
+            break;
+
+        case CmdLineArg::serverMode: srv = true; break;
+
+        case CmdLineArg::utcOffset:
+            ++i;
+            if (i >= argc) {
+                printf("No UTC offset specified for argument '%s'!\n", arg);
+                return false;
+            }
+
+            utc = atoi(argv[i]);
+            if (utc < INT16_MIN || utc > INT16_MAX) {
+                printf("'%s' is not a valid UTC offset (%d <= n <= %d)\n", argv[i], INT16_MIN, INT16_MAX);
+                return false;
+            }
+            break;
+
+        case CmdLineArg::networkProtocol:
+            ++i;
+            if (i >= argc) {
+                printf("No network protocol specified for argument '%s'!\n", arg);
+                return false;
+            }
+
+            prot = ptpProtocolFromStr(argv[i]);
+            if (prot == PTPProtocol::invalid) {
+                printf("'%s' is not a valid network protocol (%s)\n", argv[i],
+                        enumClassToStr<PTPProtocol>(ptpProtocolToShortStr).c_str());
                 return false;
             }
             break;
@@ -388,7 +457,7 @@ bool parseArgs(Json &config, bool &inventory, bool &daemonize, int argc, char **
             config[FLASH_PTP_JSON_CFG_CLIENT_MODE][FLASH_PTP_JSON_CFG_CLIENT_MODE_STATE_FILE] = val;
             break;
 
-        case CmdLineArg::stateTable: stateTable = true; break;
+        case CmdLineArg::stateTable: sttbl = true; break;
         case CmdLineArg::printInventory: inventory = true; break;
         case CmdLineArg::fork: daemonize = true; break;
         case CmdLineArg::help: return false;
@@ -418,6 +487,15 @@ bool parseArgs(Json &config, bool &inventory, bool &daemonize, int argc, char **
         if (tslvl != PTPTimestampLevel::invalid)
             server[FLASH_PTP_JSON_CFG_SERVER_MODE_SERVER_TIMESTAMP_LEVEL] = ptpTimestampLevelToShortStr(tslvl);
 
+        if (lpf > 1) {
+            Json filter = Json::object();
+            filter[FLASH_PTP_JSON_CFG_FILTER_TYPE] = filter::Filter::typeToStr(filter::FilterType::luckyPacket);
+            filter[FLASH_PTP_JSON_CFG_FILTER_SIZE] = lpf;
+
+            server[FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVER_FILTERS] = Json::array();
+            server[FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVER_FILTERS].push_back(std::move(filter));
+        }
+
         clientMode[FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVERS] = Json::array();
         clientMode[FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVERS].push_back(std::move(server));
 
@@ -432,13 +510,37 @@ bool parseArgs(Json &config, bool &inventory, bool &daemonize, int argc, char **
             clientMode[FLASH_PTP_JSON_CFG_CLIENT_MODE_ADJUSTMENTS].push_back(std::move(adjustment));
         }
 
-        clientMode[FLASH_PTP_JSON_CFG_CLIENT_MODE_STATE_TABLE] = stateTable;
+        clientMode[FLASH_PTP_JSON_CFG_CLIENT_MODE_STATE_TABLE] = sttbl;
         clientMode[FLASH_PTP_JSON_CFG_CLIENT_MODE_ENABLED] = true;
 
         config[FLASH_PTP_JSON_CFG_CLIENT_MODE] = std::move(clientMode);
     }
 
-    if (stateTable)
+    if (srv) {
+        Json serverMode = Json::object();
+        Json listener = Json::object();
+
+        if (intf.empty()) {
+            printf("Network interface must be specified ('-%c')!\n", __arg_chars[(int)CmdLineArg::interface]);
+            return false;
+        }
+
+        listener[FLASH_PTP_JSON_CFG_SERVER_MODE_LISTENER_INTERFACE] = intf;
+        if (prot != PTPProtocol::invalid)
+            listener[FLASH_PTP_JSON_CFG_SERVER_MODE_LISTENER_PROTOCOL] = ptpProtocolToShortStr(prot);
+        if (tslvl != PTPTimestampLevel::invalid)
+            listener[FLASH_PTP_JSON_CFG_SERVER_MODE_LISTENER_TIMESTAMP_LEVEL] = ptpTimestampLevelToShortStr(tslvl);
+        listener[FLASH_PTP_JSON_CFG_SERVER_MODE_LISTENER_UTC_OFFSET] = utc;
+
+        serverMode[FLASH_PTP_JSON_CFG_SERVER_MODE_LISTENERS] = Json::array();
+        serverMode[FLASH_PTP_JSON_CFG_SERVER_MODE_LISTENERS].push_back(std::move(listener));
+
+        serverMode[FLASH_PTP_JSON_CFG_SERVER_MODE_ENABLED] = true;
+
+        config[FLASH_PTP_JSON_CFG_SERVER_MODE] = std::move(serverMode);
+    }
+
+    if (sttbl)
         log[cppLog::logTypeToStr(cppLog::LogType::stdStreams)][CPP_LOG_CONFIG_INSTANCE_ENABLED] = false;
     config[FLASH_PTP_JSON_CFG_LOGGING] = std::move(log);
 
