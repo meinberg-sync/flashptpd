@@ -41,7 +41,18 @@ enum class CmdLineArg {
     invalid = -1,
     min,
     configFile = min,
+    interface,
+    destAddress,
+    reqInterval,
+    stateInterval,
+    ptpVersion,
+    timestampLevel,
+    logLevel,
+    standardOut,
+    noSyslog,
+    logFile,
     stateFile,
+    stateTable,
     printInventory,
     fork,
     help,
@@ -50,7 +61,18 @@ enum class CmdLineArg {
 
 static const char __arg_chars[] = {
     'c',
+    'i',
+    'd',
+    'r',
+    'g',
+    'v',
+    't',
+    'l',
+    'm',
     'q',
+    'f',
+    's',
+    'x',
     'p',
     'f',
     'h'
@@ -58,15 +80,37 @@ static const char __arg_chars[] = {
 
 static const char *__arg_strs[] = {
     "configFile",
+    "interface",
+    "destAddress",
+    "reqInterval",
+    "stateInterval",
+    "ptpVersion",
+    "timestampLevel",
+    "logLevel",
+    "standardOut",
+    "noSyslog",
+    "logFile",
     "stateFile",
+    "stateTable",
     "printInventory",
     "fork",
     "help"
 };
 
 static const char *__arg_descs[] = {
-    "name of the configuration file in JSON format",
-    "periodically print the servers states to the specified file (client mode)",
+    "read configuration from file (JSON)",
+    "network interface to be used (e.g., \"enp1s0\")",
+    "server destination address in client mode (MAC, IPv4 or IPv6)",
+    "interval to be used for external server requests (2^n)",
+    "interval to be used for external server state queries (2^n)",
+    "PTP version to be used for server requests (v2/v2.1)",
+    "fixed timestamp level to be used (hw/so/usr)",
+    "set the log level for all enabled channels",
+    "print logs to stdout",
+    "do not print logs to syslog",
+    "print logs to specified file",
+    "periodically print the server state table to file (client mode)",
+    "print the server state table to stdout (and disable stdout logs)",
     "print system inventory (interfaces, addresses, timestampers) and exit",
     "fork service into background",
     "print this usage information"
@@ -95,7 +139,7 @@ void printUsage()
     printf("%s v%s\n", FLASH_PTP_DAEMON, FLASH_PTP_VERSION);
     printf("Usage:\n");
     for (int i = (int)CmdLineArg::min; i <= (int)CmdLineArg::max; ++i)
-        printf("  -%c    --%-14s%s\n", __arg_chars[i], __arg_strs[i], __arg_descs[i]);
+        printf("  -%c    --%-18s%s\n", __arg_chars[i], __arg_strs[i], __arg_descs[i]);
     printf("\n");
 }
 
@@ -104,6 +148,14 @@ bool parseArgs(Json &config, bool &inventory, bool &daemonize, int argc, char **
     char *arg, *val, c;
     std::ifstream ifs;
     std::ofstream ofs;
+    Json log;
+    cppLog::LogSeverity sev;
+    std::string intf;
+    int8_t ri, si;
+    network::Address destAddr;
+    PTPVersion vers;
+    PTPTimestampLevel tslvl;
+    bool stateTable;
     CmdLineArg a;
 
     for (int i = 1; i < argc; ++i) {
@@ -123,7 +175,12 @@ bool parseArgs(Json &config, bool &inventory, bool &daemonize, int argc, char **
             return false;
         }
         else if (a != CmdLineArg::configFile) {
-            if (a == CmdLineArg::stateFile)
+            if (a != CmdLineArg::standardOut &&
+                a != CmdLineArg::noSyslog &&
+                a != CmdLineArg::stateTable &&
+                a != CmdLineArg::printInventory &&
+                a != CmdLineArg::fork &&
+                a != CmdLineArg::help)
                 ++i;
             continue;
         }
@@ -155,6 +212,17 @@ bool parseArgs(Json &config, bool &inventory, bool &daemonize, int argc, char **
     if (config.is_null())
         config = Json::object();
 
+    log = Json::object();
+    log[cppLog::logTypeToStr(cppLog::LogType::stdStreams)][CPP_LOG_CONFIG_INSTANCE_ENABLED] = false;
+    log[cppLog::logTypeToStr(cppLog::LogType::file)][CPP_LOG_CONFIG_INSTANCE_ENABLED] = false;
+    log[cppLog::logTypeToStr(cppLog::LogType::syslog)][CPP_LOG_CONFIG_INSTANCE_ENABLED] = true;
+
+    ri = 0;
+    si = INT8_MAX;
+    vers = PTPVersion::invalid;
+    tslvl = PTPTimestampLevel::invalid;
+    stateTable = false;
+
     for (int i = 1; i < argc; ++i) {
         arg = argv[i];
         if (strlen(arg) < 2 || arg[0] != '-') {
@@ -169,6 +237,139 @@ bool parseArgs(Json &config, bool &inventory, bool &daemonize, int argc, char **
 
         switch (a) {
         case CmdLineArg::configFile: ++i; continue;
+
+        case CmdLineArg::interface:
+            ++i;
+            if (i >= argc) {
+                printf("No interface name specified for argument '%s'!\n", arg);
+                return false;
+            }
+
+            intf = argv[i];
+            if (!network::hasInterface(intf)) {
+                printf("Interface '%s' could not be found!\n", intf.c_str());
+                return false;
+            }
+            break;
+
+        case CmdLineArg::destAddress:
+            ++i;
+            if (i >= argc) {
+                printf("No destination address specified for argument '%s'!\n", arg);
+                return false;
+            }
+
+            destAddr = network::Address(argv[i]);
+            if (!destAddr.valid()) {
+                printf("'%s' is not a valid destination (MAC, IPv4 or IPv6) address!\n", argv[i]);
+                return false;
+            }
+            break;
+
+        case CmdLineArg::reqInterval:
+            ++i;
+            if (i >= argc) {
+                printf("No request interval specified for argument '%s'!\n", arg);
+                return false;
+            }
+
+            ri = atoi(argv[i]);
+            if (ri < -7 || ri > 7) {
+                printf("'%s' is not a valid request interval (-7 <= n <= +7)\n", argv[i]);
+                return false;
+            }
+            break;
+
+        case CmdLineArg::stateInterval:
+            ++i;
+            if (i >= argc) {
+                printf("No state interval specified for argument '%s'!\n", arg);
+                return false;
+            }
+
+            si = atoi(argv[i]);
+            if (si < -7 || si > 7) {
+                printf("'%s' is not a valid state interval (-7 <= n <= +7)\n", argv[i]);
+                return false;
+            }
+            break;
+
+        case CmdLineArg::ptpVersion:
+            ++i;
+            if (i >= argc) {
+                printf("No PTP version specified for argument '%s'!\n", arg);
+                return false;
+            }
+
+            vers = ptpVersionFromStr(argv[i]);
+            if (vers != PTPVersion::v2_0 && vers != PTPVersion::v2_1) {
+                printf("'%s' is not a valid PTP version (v2/v2.1)\n", argv[i]);
+                return false;
+            }
+            break;
+
+        case CmdLineArg::timestampLevel:
+            ++i;
+            if (i >= argc) {
+                printf("No timestamp level specified for argument '%s'!\n", arg);
+                return false;
+            }
+
+            tslvl = ptpTimestampLevelFromShortStr(argv[i]);
+            if (tslvl == PTPTimestampLevel::invalid) {
+                printf("'%s' is not a valid timestamp level (%s)\n", argv[i],
+                        enumClassToStr<PTPTimestampLevel>(ptpTimestampLevelToShortStr).c_str());
+                return false;
+            }
+            break;
+
+        case CmdLineArg::logLevel:
+            ++i;
+            if (i >= argc) {
+                printf("No log level specified for argument '%s'!\n", arg);
+                return false;
+            }
+
+            val = argv[i];
+            sev = cppLog::logSeverityFromStr(val);
+            if (sev == cppLog::LogSeverity::invalid) {
+                printf("'%s' is not a valid log level: %s\n", val,
+                        enumClassToStr<cppLog::LogSeverity>(cppLog::logSeverityToStr).c_str());
+                return false;
+            }
+
+            log[cppLog::logTypeToStr(cppLog::LogType::stdStreams)][CPP_LOG_CONFIG_INSTANCE_SEVERITY] = val;
+            log[cppLog::logTypeToStr(cppLog::LogType::file)][CPP_LOG_CONFIG_INSTANCE_SEVERITY] = val;
+            log[cppLog::logTypeToStr(cppLog::LogType::syslog)][CPP_LOG_CONFIG_INSTANCE_SEVERITY] = val;
+            break;
+
+        case CmdLineArg::standardOut:
+            log[cppLog::logTypeToStr(cppLog::LogType::stdStreams)][CPP_LOG_CONFIG_INSTANCE_ENABLED] = true;
+            break;
+
+        case CmdLineArg::noSyslog:
+            log[cppLog::logTypeToStr(cppLog::LogType::syslog)][CPP_LOG_CONFIG_INSTANCE_ENABLED] = false;
+            break;
+
+        case CmdLineArg::logFile:
+            ++i;
+            if (i >= argc) {
+                printf("No filename specified for argument '%s'!\n", arg);
+                return false;
+            }
+
+            val = argv[i];
+            ofs.open(val);
+            if (!ofs.good()) {
+                printf("Log file '%s' could not be opened with write access!\n", val);
+                return false;
+            }
+
+            ofs.close();
+            log[cppLog::logTypeToStr(cppLog::LogType::file)][CPP_LOG_CONFIG_INSTANCE_ENABLED] = true;
+            log[cppLog::logTypeToStr(cppLog::LogType::file)][CPP_LOG_CONFIG_INSTANCE_FILENAME] = val;
+            break;
+
         case CmdLineArg::stateFile:
             ++i;
             if (i >= argc) {
@@ -187,6 +388,7 @@ bool parseArgs(Json &config, bool &inventory, bool &daemonize, int argc, char **
             config[FLASH_PTP_JSON_CFG_CLIENT_MODE][FLASH_PTP_JSON_CFG_CLIENT_MODE_STATE_FILE] = val;
             break;
 
+        case CmdLineArg::stateTable: stateTable = true; break;
         case CmdLineArg::printInventory: inventory = true; break;
         case CmdLineArg::fork: daemonize = true; break;
         case CmdLineArg::help: return false;
@@ -195,6 +397,50 @@ bool parseArgs(Json &config, bool &inventory, bool &daemonize, int argc, char **
             return false;
         }
     }
+
+    if (destAddr.valid()) {
+        Json clientMode = Json::object();
+        Json server = Json::object();
+        std::string phc;
+
+        if (intf.empty()) {
+            printf("Network interface must be specified ('-%c')!\n", __arg_chars[(int)CmdLineArg::interface]);
+            return false;
+        }
+
+        server[FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVER_DST_ADDRESS] = destAddr.str();
+        server[FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVER_SRC_INTERFACE] = intf;
+        server[FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVER_REQUEST_INTERVAL] = ri;
+        if (si != INT8_MAX)
+            server[FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVER_STATE_INTERVAL] = si;
+        if (vers != PTPVersion::invalid)
+            server[FLASH_PTP_JSON_CFG_SERVER_MODE_SERVER_PTP_VERSION] = ptpVersionToShortStr(vers);
+        if (tslvl != PTPTimestampLevel::invalid)
+            server[FLASH_PTP_JSON_CFG_SERVER_MODE_SERVER_TIMESTAMP_LEVEL] = ptpTimestampLevelToShortStr(tslvl);
+
+        clientMode[FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVERS] = Json::array();
+        clientMode[FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVERS].push_back(std::move(server));
+
+        network::getInterfacePHCInfo(intf, &phc, nullptr);
+        if (!phc.empty()) {
+            Json adjustment = Json::object();
+            adjustment[FLASH_PTP_JSON_CFG_ADJUSTMENT_TYPE] =
+                    adjustment::Adjustment::typeToStr(adjustment::AdjustmentType::pidController);
+            adjustment[FLASH_PTP_JSON_CFG_ADJUSTMENT_CLOCK] = phc;
+
+            clientMode[FLASH_PTP_JSON_CFG_CLIENT_MODE_ADJUSTMENTS] = Json::array();
+            clientMode[FLASH_PTP_JSON_CFG_CLIENT_MODE_ADJUSTMENTS].push_back(std::move(adjustment));
+        }
+
+        clientMode[FLASH_PTP_JSON_CFG_CLIENT_MODE_STATE_TABLE] = stateTable;
+        clientMode[FLASH_PTP_JSON_CFG_CLIENT_MODE_ENABLED] = true;
+
+        config[FLASH_PTP_JSON_CFG_CLIENT_MODE] = std::move(clientMode);
+    }
+
+    if (stateTable)
+        log[cppLog::logTypeToStr(cppLog::LogType::stdStreams)][CPP_LOG_CONFIG_INSTANCE_ENABLED] = false;
+    config[FLASH_PTP_JSON_CFG_LOGGING] = std::move(log);
 
     return true;
 }
@@ -216,6 +462,14 @@ int main(int argc, char **argv)
 
     __signalStatus = 0;
 
+    // initialize network and wait for inventory worker thread to complete (at least once)
+    int ms = 2000;
+    network::init();
+    while (ms > 0 && !network::initialized()) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        ms -= 100;
+    }
+
     inventory = false;
     daemonize = false;
     if (!parseArgs(config, inventory, daemonize, argc, argv)) {
@@ -223,21 +477,15 @@ int main(int argc, char **argv)
         std::exit(EXIT_FAILURE);
     }
 
-    if (inventory) {
-        /*
-         * initialize network, wait for inventory worker thread to complete (at least once),
-         * print network interfaces, addresses and capabilities (PHCs), then exit.
-         */
-        int ms = 2000;
-        network::init();
-        while (ms > 0 && !network::initialized()) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            ms -= 100;
-        }
+    // print network interfaces, addresses and capabilities (PHCs)
+    if (inventory)
         network::print();
-        network::exit();
+
+    network::exit();
+
+    // exit if inventory option has been set via command line
+    if (inventory)
         std::exit(EXIT_SUCCESS);
-    }
 
     if (config.empty()) {
         printf("No config (file or command line arguments) specified!\n");
