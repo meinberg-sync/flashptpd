@@ -510,7 +510,6 @@ bool parseArgs(Json &config, bool &inventory, bool &daemonize, int argc, char **
             clientMode[FLASH_PTP_JSON_CFG_CLIENT_MODE_ADJUSTMENTS].push_back(std::move(adjustment));
         }
 
-        clientMode[FLASH_PTP_JSON_CFG_CLIENT_MODE_STATE_TABLE] = sttbl;
         clientMode[FLASH_PTP_JSON_CFG_CLIENT_MODE_ENABLED] = true;
 
         config[FLASH_PTP_JSON_CFG_CLIENT_MODE] = std::move(clientMode);
@@ -540,8 +539,11 @@ bool parseArgs(Json &config, bool &inventory, bool &daemonize, int argc, char **
         config[FLASH_PTP_JSON_CFG_SERVER_MODE] = std::move(serverMode);
     }
 
-    if (sttbl)
+    if (sttbl) {
         log[cppLog::logTypeToStr(cppLog::LogType::stdStreams)][CPP_LOG_CONFIG_INSTANCE_ENABLED] = false;
+        config[FLASH_PTP_JSON_CFG_CLIENT_MODE][FLASH_PTP_JSON_CFG_CLIENT_MODE_STATE_TABLE] = true;
+    }
+
     config[FLASH_PTP_JSON_CFG_LOGGING] = std::move(log);
 
     return true;
