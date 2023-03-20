@@ -640,6 +640,8 @@ int main(int argc, char **argv)
     }
 
     if (daemonize) {
+        network::exit();
+
         pid_t pid = fork();
         switch (pid) {
         case -1: {
