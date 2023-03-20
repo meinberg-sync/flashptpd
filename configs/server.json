@@ -15,12 +15,12 @@
         "enabled": true,
         "listeners": [
             {
-                "interface": "enp3s0"
+                "interface": "enp3s0",
+                "utcOffset": 37
             }
         ],
         "priority1": 128,
         "priority2": 128,
-        "timeSource": "0x60",
-        "utcOffset": 37
+        "timeSource": "0x60"
     }
 }
