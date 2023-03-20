@@ -49,6 +49,7 @@ bool FlashPTP::validateConfig(const Json &config, std::vector<std::string> *errs
         else {
             cppLog::LogType lt;
             cppLog::LogSeverity ls;
+
             for (auto &pit: it->items()) {
                 lt = cppLog::logTypeFromStr(pit.key().c_str());
                 if (lt == cppLog::LogType::invalid) {
@@ -65,6 +66,8 @@ bool FlashPTP::validateConfig(const Json &config, std::vector<std::string> *errs
                             "must be \"" + Json(false).type_name() + "\".");
                     valid = false;
                 }
+                else if (!iit->get<bool>())
+                    continue;
 
                 iit = pit.value().find(CPP_LOG_CONFIG_INSTANCE_SEVERITY);
                 if (iit != pit.value().end()) {
@@ -111,7 +114,7 @@ bool FlashPTP::validateConfig(const Json &config, std::vector<std::string> *errs
     return valid;
 }
 
-bool FlashPTP::setConfig(const Json &config, const std::string &configFile, std::vector<std::string> *errs)
+bool FlashPTP::setConfig(const Json &config, std::vector<std::string> *errs)
 {
     if (errs) {
         if (!validateConfig(config, errs))
@@ -126,12 +129,6 @@ bool FlashPTP::setConfig(const Json &config, const std::string &configFile, std:
     Json::const_iterator it, iit;
     int ms = 3000;
 
-    if (!configFile.empty())
-        _configFile = configFile;
-
-    if (config == _config)
-        goto out_write;
-
     it = config.find(FLASH_PTP_JSON_CFG_LOGGING);
     if (it != config.end())
         cppLog::init(*it);
@@ -144,7 +141,10 @@ bool FlashPTP::setConfig(const Json &config, const std::string &configFile, std:
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
             ms -= 100;
         }
+        _networkOwner = true;
     }
+    else
+        _networkOwner = false;
 
     it = config.find(FLASH_PTP_JSON_CFG_CLIENT_MODE);
     if (it != config.end())
@@ -157,14 +157,6 @@ bool FlashPTP::setConfig(const Json &config, const std::string &configFile, std:
         _serverMode.setConfig(*it);
     else
         _serverMode.setConfig(Json::object());
-
-    _config = config;
-
-out_write:
-    if (!_configFile.empty()) {
-        std::ofstream ofs(_configFile);
-        ofs << _config.dump(4, ' ', false, Json::error_handler_t::replace);
-    }
 
     return true;
 }

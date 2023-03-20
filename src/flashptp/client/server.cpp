@@ -242,7 +242,7 @@ bool Server::validateConfig(const Json &config, std::vector<std::string> *errs)
 
     it = config.find(FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVER_STATE_INTERVAL);
     if (it != config.end()) {
-        if (!it->is_number_unsigned()) {
+        if (!it->is_number_integer()) {
             errs->push_back(std::string("Type of property \"" FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVER_STATE_INTERVAL \
                     "\" within items of \"" FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVERS "\" " \
                     "must be \"") + Json((int)0).type_name() + "\".");

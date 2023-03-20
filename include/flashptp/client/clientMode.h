@@ -57,6 +57,8 @@
 #define FLASH_PTP_JSON_CFG_CLIENT_MODE_SERVERS          "servers"
 #define FLASH_PTP_JSON_CFG_CLIENT_MODE_SELECTION        "selection"
 #define FLASH_PTP_JSON_CFG_CLIENT_MODE_ADJUSTMENTS      "adjustments"
+#define FLASH_PTP_JSON_CFG_CLIENT_MODE_STATE_FILE       "stateFile"
+#define FLASH_PTP_JSON_CFG_CLIENT_MODE_STATE_TABLE      "stateTable"
 
 namespace flashptp {
 
@@ -70,8 +72,6 @@ public:
     static bool validateConfig(const Json &config, std::vector<std::string> *errs);
     bool setConfig(const Json &config, std::vector<std::string> *errs = nullptr);
 
-    inline void setServersFile(const std::string &serversFile) { _serversFile = serversFile; }
-
     // Process incoming parts of Sync Response sequences to the appropriate servers
     virtual void onMsgReceived(PTP2Message *msg, int len, const struct sockaddr_storage *srcSockaddr,
             const struct sockaddr_storage *dstSockaddr, PTPTimestampLevel timestampLevel,
@@ -83,7 +83,7 @@ protected:
 
 private:
     void resetUnusedServersStates();
-    void printServers();
+    void printState();
     inline void clearServers()
     {
         while (_servers.size()) {
@@ -108,7 +108,10 @@ private:
         }
     }
 
-    std::string _serversFile;
+    std::string _stateFile;
+    bool _stateTable{ false };
+    unsigned _stateTableRows{ 0 };
+
     std::vector<Server*> _servers;
 
     selection::Selection *_selection{ nullptr };
