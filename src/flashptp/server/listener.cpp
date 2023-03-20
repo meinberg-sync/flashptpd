@@ -153,7 +153,7 @@ bool Listener::validateConfig(const Json &config, std::vector<std::string> *errs
         else {
             int utcOffset;
             it->get_to(utcOffset);
-            if (utcOffset < 0 || utcOffset > 65535) {
+            if (utcOffset < INT16_MIN || utcOffset > INT16_MAX) {
                 errs->push_back("Value of property \"" FLASH_PTP_JSON_CFG_SERVER_MODE_LISTENER_UTC_OFFSET "\" " \
                         "within items of \"" FLASH_PTP_JSON_CFG_SERVER_MODE_LISTENERS "\" " \
                         "must be between 0 and 65535.");
