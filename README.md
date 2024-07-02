@@ -1,5 +1,5 @@
 # **flashptpd**
-**flashptpd** is the C++17 reference implementation for a new approach to **IEEE1588** *(Precision Time Protocol, PTP)*. Designed to improve efficiency while reducing complexity, this new approach (which for lack of a better name we call **FlashPTP** for now) modifies unicast PTP to enable it to adopt a client/server model, while maintaining—or even improving on—the achievable synchronization accuracy by combining the hardware timestamping capabilities of PTP with certain aspects of the clock filtering, selection, and combining algorithms provided by NTP.
+**flashptpd** is an experimental C++17 implementation of a new approach to **IEEE1588** *(Precision Time Protocol, PTP)*. Designed to improve efficiency while reducing complexity, this new approach (which for lack of a better name we call **FlashPTP** for now) modifies unicast PTP to enable it to adopt a client/server model, while maintaining—or even improving on—the achievable synchronization accuracy by combining the hardware timestamping capabilities of PTP with certain aspects of the clock filtering, selection, and combining algorithms provided by NTP.
 
 ## How it works
 ![Communication Flow Diagram](Communication_Flow.png)
